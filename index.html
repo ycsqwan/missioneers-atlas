@@ -1,0 +1,2813 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The New Eden Missioneers' Atlas — Web</title>
+<style>
+/* ═══ Reset & Base ═══ */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg-deep:#080808; --bg-panel:#0c0c0c; --bg-card:#111; --bg-input:#0a0a0a;
+  --accent:#b8860b; --accent-dim:#8b6508; --accent-glow:rgba(184,134,11,0.12);
+  --text:#999; --text-dim:#555; --text-bright:#ccc;
+  --green:#3a3; --yellow:#aa8800; --red:#933; --null:#333;
+  --blue:#558; --border:#222;
+  --sidebar-w:340px; --topbar-h:36px;
+}
+html,body{height:100%;overflow:hidden;font-family:Consolas,'Courier New','Liberation Mono',monospace;background:var(--bg-deep);color:var(--text);font-size:12px}
+
+/* ═══ Layout ═══ */
+#app{display:flex;flex-direction:column;height:100vh;position:relative}
+#topbar{height:var(--topbar-h);display:flex;align-items:center;padding:0 12px 0 40px;background:var(--bg-panel);border-bottom:1px solid var(--border);gap:12px;flex-shrink:0;z-index:10;position:relative}
+#topbar h1{font-size:13px;color:var(--accent);white-space:nowrap;font-weight:normal;letter-spacing:1px}
+#topbar .subtitle{font-size:10px;color:var(--text-dim);letter-spacing:0.5px}
+#topbar .top-search{margin-left:auto;display:flex;align-items:center;gap:4px}
+#topbar .top-search input{width:180px}
+
+#main{display:flex;flex:1;overflow:hidden;position:relative;z-index:1}
+
+/* ═══ Sidebar ═══ */
+#sidebar{
+  width:var(--sidebar-w);min-width:var(--sidebar-w);background:var(--bg-panel);
+  border-right:1px solid var(--border);display:flex;flex-direction:column;
+  overflow:hidden;transition:margin-left .2s ease;position:relative;z-index:5;
+}
+#sidebar.collapsed{margin-left:calc(-1 * var(--sidebar-w))}
+#sidebar-toggle{
+  position:absolute;top:6px;left:6px;z-index:20;
+  width:28px;height:28px;border-radius:0;background:var(--bg-card);
+  border:1px solid var(--border);color:var(--text-dim);cursor:pointer;
+  display:flex;align-items:center;justify-content:center;font-size:14px;
+}
+#sidebar-toggle:hover{color:var(--text-bright);border-color:#444}
+#sidebar-inner{flex:1;overflow-y:auto;overflow-x:hidden;padding:6px}
+#sidebar-inner::-webkit-scrollbar{width:4px}
+#sidebar-inner::-webkit-scrollbar-thumb{background:#333}
+
+/* Panels */
+.panel{margin-bottom:4px;border-radius:0;background:var(--bg-card);border:1px solid var(--border);overflow:hidden}
+.panel-header{
+  display:flex;align-items:center;padding:8px 10px;cursor:pointer;user-select:none;
+  font-size:11px;font-weight:normal;color:var(--text-bright);gap:6px;
+  letter-spacing:0.5px;text-transform:uppercase;
+}
+.panel-header:hover{color:var(--accent)}
+.panel-header .icon{font-size:12px;width:16px;text-align:center}
+.panel-header .arrow{margin-left:auto;font-size:9px;color:var(--text-dim)}
+.panel.open .panel-header .arrow{transform:rotate(90deg)}
+.panel-body{display:none;padding:6px 10px 10px}
+.panel.open .panel-body{display:block}
+
+/* Form controls */
+label.field{display:block;font-size:10px;color:var(--text-dim);margin-bottom:2px;text-transform:uppercase;letter-spacing:0.5px}
+input[type=text],input[type=number],select{
+  width:100%;padding:5px 6px;background:var(--bg-input);border:1px solid var(--border);
+  border-radius:0;color:var(--text);font-size:11px;outline:none;font-family:inherit;
+}
+input:focus,select:focus{border-color:var(--accent)}
+select{cursor:pointer}
+
+.btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:4px;
+  padding:5px 12px;border-radius:0;border:1px solid var(--border);
+  background:var(--bg-input);color:var(--text);font-size:11px;cursor:pointer;
+  white-space:nowrap;font-family:inherit;text-transform:uppercase;letter-spacing:0.5px;
+}
+.btn:hover{color:var(--text-bright);border-color:#444}
+.btn.accent{background:var(--accent);color:#000;border-color:var(--accent);font-weight:bold}
+.btn.accent:hover{background:var(--accent-dim)}
+.btn.sm{padding:3px 8px;font-size:10px}
+.btn-row{display:flex;gap:4px;margin-top:6px}
+.btn-row .btn{flex:1}
+
+.row{display:flex;gap:6px;align-items:flex-end}
+.row>div{flex:1}
+
+/* Status bar */
+.status-bar{
+  padding:4px 10px;font-size:10px;color:var(--text-dim);
+  border-top:1px solid var(--border);background:var(--bg-panel);
+  display:flex;gap:12px;flex-shrink:0;letter-spacing:0.3px;
+}
+.status-bar .stat{display:flex;align-items:center;gap:4px}
+.status-bar .dot{width:5px;height:5px;border-radius:0}
+
+/* ═══ Canvas Area ═══ */
+#canvas-wrap{flex:1;position:relative;overflow:hidden;background:var(--bg-deep)}
+#starmap{position:absolute;top:0;left:0;cursor:grab}
+#starmap.grabbing{cursor:grabbing}
+#tooltip{
+  position:absolute;pointer-events:none;padding:3px 8px;
+  background:rgba(0,0,0,.9);border:1px solid var(--border);
+  border-radius:0;font-size:10px;color:var(--text-bright);
+  white-space:nowrap;display:none;z-index:5;font-family:inherit;
+}
+#minimap{
+  position:absolute;bottom:8px;right:8px;width:160px;height:100px;
+  background:rgba(0,0,0,.85);border:1px solid var(--border);border-radius:0;
+  z-index:5;cursor:pointer;
+}
+#legend{
+  position:absolute;bottom:8px;left:8px;padding:6px 10px;
+  background:rgba(0,0,0,.85);border:1px solid var(--border);border-radius:0;
+  font-size:10px;z-index:5;
+}
+#legend .item{display:flex;align-items:center;gap:5px;margin:1px 0}
+#legend .dot{width:6px;height:6px;border-radius:0;flex-shrink:0}
+
+/* ═══ Detail Overlay ═══ */
+#detail-overlay{
+  position:absolute;top:0;right:0;width:360px;height:100%;
+  background:var(--bg-panel);border-left:1px solid var(--border);
+  z-index:15;display:none;flex-direction:column;
+}
+#detail-overlay.open{display:flex}
+#detail-header{
+  padding:10px 12px;border-bottom:1px solid var(--border);
+  display:flex;align-items:center;gap:8px;
+}
+#detail-header h3{font-size:12px;color:var(--text-bright);flex:1;font-weight:normal}
+#detail-close{background:none;border:none;color:var(--text-dim);cursor:pointer;font-size:14px}
+#detail-close:hover{color:var(--text-bright)}
+#detail-body{flex:1;overflow-y:auto;padding:10px 12px}
+#detail-body::-webkit-scrollbar{width:4px}
+#detail-body::-webkit-scrollbar-thumb{background:#333}
+
+/* Tree detail */
+.dtree{font-size:11px}
+.dtree .node{padding:2px 0}
+.dtree .node-key{color:var(--text-dim);font-size:10px}
+.dtree .node-val{color:var(--text-bright)}
+.dtree .children{padding-left:12px;border-left:1px solid #222;margin-left:3px}
+.dtree .toggle{cursor:pointer;user-select:none;color:var(--accent);font-size:9px;margin-right:3px}
+.dtree .toggle:hover{color:var(--text-bright)}
+
+/* Gate list */
+.gate-list{display:flex;flex-wrap:wrap;gap:3px;margin-top:3px}
+.gate-chip{
+  padding:1px 6px;border-radius:0;font-size:9px;cursor:pointer;
+  background:var(--bg-input);border:1px solid var(--border);color:var(--text);
+}
+.gate-chip:hover{border-color:var(--accent);color:var(--accent)}
+
+/* Station card */
+.stn-card{
+  padding:5px 6px;margin:3px 0;border-radius:0;
+  background:transparent;border:1px solid #1a1a1a;
+}
+.stn-card .stn-name{font-size:11px;color:var(--text-bright)}
+.stn-card .stn-detail{font-size:9px;color:var(--text-dim);margin-top:1px}
+
+/* Agent card */
+.agent-card{
+  padding:5px 6px;margin:2px 0;border-radius:0;
+  background:transparent;border:1px solid #1a1a1a;
+}
+.agent-card .agent-name{font-size:11px;color:var(--text-bright)}
+.agent-card .agent-detail{font-size:9px;color:var(--text-dim);margin-top:1px}
+.agent-card .agent-level{display:inline-block;padding:0 4px;border-radius:0;font-size:9px;font-weight:bold;margin-left:3px}
+.agent-card .agent-level.l1{background:#0a1a0a;color:#3a3}
+.agent-card .agent-level.l2{background:#0a1a0a;color:#3a3}
+.agent-card .agent-level.l3{background:#1a1a0a;color:#aa8800}
+.agent-card .agent-level.l4{background:#1a0a0a;color:#933}
+.agent-card .agent-level.l5{background:#1a0a0a;color:#933}
+
+/* Reports area */
+#reports-area{display:none;flex-direction:column;position:absolute;bottom:0;left:0;right:0;height:200px;background:var(--bg-panel);border-top:1px solid var(--border);z-index:12}
+#reports-area.open{display:flex}
+#reports-header{display:flex;align-items:center;padding:0 10px;border-bottom:1px solid var(--border);background:var(--bg-card);gap:0;overflow-x:auto;flex-shrink:0}
+#reports-header .tab{
+  padding:6px 10px;font-size:10px;cursor:pointer;color:var(--text-dim);
+  border-bottom:1px solid transparent;white-space:nowrap;text-transform:uppercase;letter-spacing:0.3px;
+}
+#reports-header .tab.active{color:var(--accent);border-bottom-color:var(--accent)}
+#reports-header .tab:hover{color:var(--text-bright)}
+#reports-header .close-reports{margin-left:auto;padding:4px 8px;cursor:pointer;color:var(--text-dim);font-size:12px;background:none;border:none}
+#reports-content{flex:1;overflow-y:auto;padding:8px 10px;font-size:10px;font-family:Consolas,'Courier New',monospace;color:var(--text);white-space:pre-wrap;line-height:1.5}
+#reports-content::-webkit-scrollbar{width:4px}
+#reports-content::-webkit-scrollbar-thumb{background:#333}
+
+/* Progress */
+.progress-bar{height:2px;background:var(--border);border-radius:0;overflow:hidden;margin-top:4px;display:none}
+.progress-bar.active{display:block}
+.progress-bar .fill{height:100%;background:var(--accent);width:0%}
+
+/* Separator */
+.sep{height:1px;background:var(--border);margin:6px 0}
+
+/* Info text */
+.info-text{font-size:9px;color:var(--text-dim);margin-top:3px;line-height:1.4}
+
+/* Hub table */
+.hub-table{width:100%;border-collapse:collapse;font-size:10px;margin-top:4px}
+.hub-table th{text-align:left;color:var(--text-dim);font-weight:normal;padding:2px 5px;border-bottom:1px solid var(--border);text-transform:uppercase;letter-spacing:0.3px}
+.hub-table td{padding:2px 5px;border-bottom:1px solid #1a1a1a}
+.hub-table tr:hover{background:rgba(184,134,11,.05);cursor:pointer}
+
+/* Mission Hub expandable rows */
+.mh-row{cursor:pointer}
+.mh-row:hover{background:rgba(184,134,11,.08) !important}
+.mh-detail-row td{border-bottom:1px solid var(--border)}
+
+/* ═══ Modal Dialog ═══ */
+.modal-overlay{
+  position:fixed;top:0;left:0;right:0;bottom:0;
+  background:rgba(0,0,0,.7);z-index:100;
+  display:flex;align-items:center;justify-content:center;
+}
+.modal-overlay.hidden{display:none}
+.hidden{display:none !important}
+.modal-dialog{
+  background:var(--bg-panel);border:1px solid var(--border);border-radius:0;
+  display:flex;flex-direction:column;overflow:hidden;
+  max-width:95vw;max-height:90vh;
+}
+.modal-dialog.wide{width:1100px;height:700px}
+.modal-dialog.medium{width:800px;height:600px}
+.modal-dialog.narrow{width:600px;height:500px}
+.modal-header{
+  padding:8px 12px;border-bottom:1px solid var(--border);
+  display:flex;align-items:center;gap:8px;flex-shrink:0;
+  background:var(--bg-card);
+}
+.modal-header h3{font-size:12px;color:var(--accent);flex:1;margin:0;font-weight:normal;letter-spacing:0.5px}
+.modal-close{background:none;border:none;color:var(--text-dim);cursor:pointer;font-size:14px;padding:2px 6px}
+.modal-close:hover{color:var(--text-bright)}
+.modal-filters{padding:8px 12px;border-bottom:1px solid var(--border);flex-shrink:0}
+.modal-body{flex:1;overflow-y:auto;padding:0}
+.modal-body::-webkit-scrollbar{width:4px}
+.modal-body::-webkit-scrollbar-thumb{background:#333}
+.modal-footer{
+  padding:6px 12px;border-top:1px solid var(--border);flex-shrink:0;
+  display:flex;align-items:center;gap:6px;
+}
+.modal-footer .modal-status{font-size:10px;color:var(--accent);flex:1}
+.modal-footer .modal-summary{font-size:10px;color:var(--text-dim)}
+
+/* Modal result table */
+.modal-table{width:100%;border-collapse:collapse;font-size:10px}
+.modal-table th{
+  text-align:left;color:var(--text-dim);font-weight:normal;
+  padding:4px 6px;border-bottom:1px solid var(--border);
+  position:sticky;top:0;background:var(--bg-panel);z-index:1;
+  text-transform:uppercase;letter-spacing:0.3px;
+}
+.modal-table td{padding:3px 6px;border-bottom:1px solid #1a1a1a}
+.modal-table tr:hover{background:rgba(184,134,11,.05);cursor:pointer}
+.modal-table tr.selected{background:var(--accent-glow);border-left:1px solid var(--accent)}
+.modal-table .col-num{text-align:center;width:30px}
+.modal-table .col-jumps{text-align:center;width:40px}
+.modal-table .col-sec{text-align:center;width:40px}
+.modal-table .col-lvl{text-align:center;width:25px}
+
+/* Modal detail pane */
+.modal-detail{
+  border-top:1px solid var(--border);padding:8px 12px;
+  max-height:200px;overflow-y:auto;font-size:10px;
+  background:var(--bg-card);
+}
+.modal-detail::-webkit-scrollbar{width:4px}
+.modal-detail::-webkit-scrollbar-thumb{background:#333}
+
+/* Modal filter row */
+.mf-row{display:flex;gap:6px;align-items:flex-end;margin-bottom:4px;flex-wrap:wrap}
+.mf-row>div{display:flex;flex-direction:column}
+.mf-row label{font-size:9px;color:var(--text-dim);margin-bottom:1px;text-transform:uppercase;letter-spacing:0.3px}
+.mf-row input,.mf-row select{padding:4px 5px;font-size:10px}
+.mf-row input[type=text]{width:130px}
+.mf-row select{width:90px}
+
+/* Checkbox in modal */
+.modal-check{
+  display:flex;align-items:center;gap:3px;font-size:10px;color:var(--text);
+  cursor:pointer;padding:3px 0;
+}
+.modal-check input{accent-color:var(--accent)}
+
+/* Split pane for list + detail */
+.split-top{flex:1;overflow-y:auto;min-height:0}
+.split-bottom{border-top:1px solid var(--border);max-height:220px;overflow-y:auto;flex-shrink:0;padding:8px 12px;font-size:10px;background:var(--bg-card)}
+.split-bottom::-webkit-scrollbar{width:4px}
+.split-bottom::-webkit-scrollbar-thumb{background:#333}
+
+/* Responsive */
+@media(max-width:900px){
+  :root{--sidebar-w:260px}
+  #detail-overlay{width:280px}
+  .modal-dialog.wide{width:95vw;height:85vh}
+  .modal-dialog.medium{width:95vw;height:80vh}
+}
+</style>
+</head>
+<body>
+<div id="app">
+  <!-- ═══ Top Bar ═══ -->
+  <div id="topbar">
+    <button id="sidebar-toggle" onclick="toggleSidebar()" title="Toggle Sidebar (B)">☰</button>
+    <h1>🔭 The New Eden Missioneers' Atlas</h1>
+    <span class="subtitle">Route Topology · Full ESI · Web Edition</span>
+    <div class="top-search">
+      <input type="text" id="global-search" placeholder="Find system (Enter)…" onkeydown="if(event.key==='Enter')doGlobalSearch()">
+      <button class="btn" onclick="doGlobalSearch()">🔍</button>
+    </div>
+  </div>
+
+  <div id="main">
+    <!-- ═══ Sidebar ═══ -->
+    <div id="sidebar">
+      <div id="sidebar-inner">
+
+        <!-- ── Route Planning ── -->
+        <div class="panel open" id="panel-route">
+          <div class="panel-header" onclick="togglePanel('panel-route')">
+            <span class="icon">🗺️</span> Route Planning
+            <span class="arrow">▸</span>
+          </div>
+          <div class="panel-body">
+            <label class="field">Origin System</label>
+            <input type="text" id="inp-origin" value="Jita" placeholder="e.g. Jita">
+            <div class="row" style="margin-top:6px">
+              <div style="flex:0.4"><label class="field">Jumps</label><input type="number" id="inp-jumps" value="2" min="0" max="99"></div>
+              <div><label class="field">Destination (optional)</label><input type="text" id="inp-dest" placeholder="e.g. Amarr"></div>
+            </div>
+            <div class="btn-row">
+              <button class="btn accent" onclick="doFullScan()">⚡ Full Scan</button>
+              <button class="btn" onclick="doQuickScan()">Quick Scan</button>
+            </div>
+            <div class="btn-row">
+              <button class="btn accent" onclick="doRouteScan()">🗺️ Route Scan</button>
+              <button class="btn" onclick="doOverview()">📊 Overview</button>
+            </div>
+            <div class="progress-bar" id="scan-progress"><div class="fill" id="scan-progress-fill"></div></div>
+            <div id="scan-status" style="font-size:11px;color:var(--text-dim);margin-top:6px"></div>
+          </div>
+        </div>
+
+        <!-- ── Intelligence ── -->
+        <div class="panel open" id="panel-intel">
+          <div class="panel-header" onclick="togglePanel('panel-intel')">
+            <span class="icon">🧠</span> Intelligence
+            <span class="arrow">▸</span>
+          </div>
+          <div class="panel-body">
+            <div class="btn-row" style="flex-wrap:wrap">
+              <button class="btn accent" style="flex:1;min-width:140px;margin-bottom:4px" onclick="openAgentFinder()">🔍 Agent Finder</button>
+              <button class="btn accent" style="flex:1;min-width:140px;margin-bottom:4px" onclick="openNearestLP()">🏪 Nearest LP Store</button>
+            </div>
+            <div class="btn-row" style="flex-wrap:wrap">
+              <button class="btn accent" style="flex:1;min-width:140px;margin-bottom:4px" onclick="openMissionHub()">🗺 Mission Hub</button>
+              <button class="btn accent" style="flex:1;min-width:140px;margin-bottom:4px" onclick="openMissionQuery()">📋 Mission Query</button>
+            </div>
+            <div class="btn-row" style="flex-wrap:wrap">
+              <button class="btn accent" style="flex:1;min-width:140px;margin-bottom:4px" onclick="openLPStoreFinder()">🎖️ LP Store Finder</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── Star Map Controls ── -->
+        <div class="panel open" id="panel-mapctrl">
+          <div class="panel-header" onclick="togglePanel('panel-mapctrl')">
+            <span class="icon">🌐</span> Star Map Controls
+            <span class="arrow">▸</span>
+          </div>
+          <div class="panel-body">
+            <label class="field">Region Filter</label>
+            <select id="sel-region" onchange="onRegionChange()">
+              <option value="">All Regions</option>
+            </select>
+            <div class="sep"></div>
+            <label class="field">Display</label>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:4px">
+              <label style="font-size:11px;display:flex;align-items:center;gap:4px;cursor:pointer"><input type="checkbox" id="chk-hulls" checked onchange="requestRedraw()"> Region Hulls</label>
+              <label style="font-size:11px;display:flex;align-items:center;gap:4px;cursor:pointer"><input type="checkbox" id="chk-labels" checked onchange="requestRedraw()"> Region Labels</label>
+              <label style="font-size:11px;display:flex;align-items:center;gap:4px;cursor:pointer"><input type="checkbox" id="chk-gates" checked onchange="requestRedraw()"> Stargate Lines</label>
+              <label style="font-size:11px;display:flex;align-items:center;gap:4px;cursor:pointer"><input type="checkbox" id="chk-names" onchange="requestRedraw()"> System Names</label>
+            </div>
+            <div class="sep"></div>
+            <div class="btn-row">
+              <button class="btn" onclick="resetView()">⟲ Reset View</button>
+              <button class="btn" onclick="fitAll()">⊡ Fit All</button>
+            </div>
+            <div class="btn-row">
+              <button class="btn" onclick="fitRegion('The Forge')">⊡ The Forge</button>
+              <button class="btn" onclick="fitRegion('Domain')">⊡ Domain</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── Data Status ── -->
+        <div class="panel" id="panel-data">
+          <div class="panel-header" onclick="togglePanel('panel-data')">
+            <span class="icon">📊</span> Data Status
+            <span class="arrow">▸</span>
+          </div>
+          <div class="panel-body" id="data-status-body">
+            <div style="font-size:11px;color:var(--text-dim)">Loading…</div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ═══ Canvas Area ═══ -->
+    <div id="canvas-wrap">
+      <canvas id="starmap"></canvas>
+      <div id="tooltip"></div>
+      <canvas id="minimap" width="180" height="120"></canvas>
+      <div id="legend">
+        <div class="item"><span class="dot" style="background:var(--green)"></span> Highsec</div>
+        <div class="item"><span class="dot" style="background:var(--yellow)"></span> Lowsec</div>
+        <div class="item"><span class="dot" style="background:var(--red)"></span> Null / Wormhole</div>
+      </div>
+
+      <!-- Detail Overlay -->
+      <div id="detail-overlay">
+        <div id="detail-header">
+          <h3 id="detail-title">System Detail</h3>
+          <button id="detail-close" onclick="closeDetail()">✕</button>
+        </div>
+        <div id="detail-body"></div>
+      </div>
+
+      <!-- Reports Area (bottom panel) -->
+      <div id="reports-area">
+        <div id="reports-header">
+          <button class="close-reports" onclick="closeReports()">✕</button>
+        </div>
+        <div id="reports-content"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Status Bar -->
+  <div class="status-bar">
+    <div class="stat"><span class="dot" style="background:var(--green)" id="status-dot"></span> <span id="status-text">Initializing…</span></div>
+    <div class="stat" id="stat-systems"></div>
+    <div class="stat" id="stat-gates"></div>
+    <div class="stat" id="stat-regions"></div>
+    <div class="stat" id="stat-agents" style="display:none"></div>
+    <div class="stat" style="margin-left:auto" id="stat-coords"></div>
+  </div>
+</div>
+
+<!-- Modal container -->
+<div id="modal-root"></div>
+
+<script>
+// ═══════════════════════════════════════════════════════════════════════════
+// Constants
+// ═══════════════════════════════════════════════════════════════════════════
+const AGENT_TYPE_NAMES = {
+  1:'Non-Agent', 2:'Basic Agent', 3:'Tutorial Agent',
+  4:'Research Agent', 5:'CONCORD Agent', 6:'Storyline Mission',
+  7:'Storyline Agent', 8:'Event Mission', 9:'Faction Warfare',
+  10:'Epic Arc', 11:'Aura Agent', 12:'Career Agent', 13:'Heraldry Agent',
+};
+const AGENT_DIVISION_NAMES = {
+  18:'R&D', 22:'Distribution', 23:'Mining', 24:'Security',
+  25:'Industrialist', 26:'Explorer', 27:'Producer',
+  28:'Enforcer', 29:'Soldier of Fortune', 37:'InterBus',
+};
+const FACTION_LP_STORES = {
+  500001:'Caldari', 500002:'Minmatar', 500003:'Amarr', 500004:'Gallente',
+  500005:'Jove', 500006:'CONCORD', 500007:'Ammatar', 500008:'Angel Cartel',
+  500009:'Blood Raiders', 500010:'Guristas', 500011:'Sisters of EVE',
+  500012:'ORE', 500014:'Mordu\'s Legion', 500016:'Sansha',
+  500018:'Serpentis', 500019:'Thukker', 500020:'Syndicate',
+};
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Helpers
+// ═══════════════════════════════════════════════════════════════════════════
+function getStationName(stnId, typeID) {
+  // 1. Try ESI station name (real name, e.g. "Jita IV - Moon 4 - Caldari Navy Assembly Plant")
+  if (stationNames?.[stnId]) return stationNames[stnId];
+  // 2. Try SDE station name (if not "?")
+  const sdeStn = SDE?.stationsById?.[stnId];
+  if (sdeStn?.name && sdeStn.name !== '?') return sdeStn.name;
+  // 3. Try type name from typesNames
+  const tid = typeID || sdeStn?.typeID;
+  if (tid && typesNames?.[tid]) {
+    const tn = typesNames[tid];
+    return tn.zh ? `${tn.en} (${tn.zh})` : tn.en;
+  }
+  // 4. Fallback
+  return `Station #${stnId}`;
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// State
+// ═══════════════════════════════════════════════════════════════════════════
+let SYS_DATA = null, systems = {}, nameToId = {};
+let regions = {}, regionList = [], edges = [], edgeSet = new Set();
+let sysIds=[], sysX=[], sysY=[], sysSec=[], sysRid=[], sysNames=[];
+let N = 0;
+let regionHulls = {}, regionLabelPos = {};
+let SDE = null;           // SDE data (agents, stations, corps, factions)
+let missionHubs = null;   // mission hub top-200
+let missionsData = null;  // { missionsById, missionsByName }
+let typesNames = null;    // { typeID: { en, zh } }
+let agentTypesNames = null; // { typeID: name }
+let agentDivisions = null;  // { divID: { en, zh } }
+let stationNames = null;    // { stationId: "Jita VII - Moon 4 - ..." }
+
+// View state
+let view = { cx: 0, cy: 0, scale: 1 };
+let highlight = null;
+let hoverSys = null;
+let filterRid = null;
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Init
+// ═══════════════════════════════════════════════════════════════════════════
+async function init() {
+  setStatus('Loading systems_static.json…', 'yellow');
+  try {
+    const resp = await fetch('/systems_static.json');
+    if (!resp.ok) throw new Error('HTTP ' + resp.status);
+    SYS_DATA = await resp.json();
+    if (!SYS_DATA || !SYS_DATA.systems) throw new Error('Invalid data format');
+    processData();
+    setStatus('Ready', 'green');
+    populateRegionSelect();
+    initCanvas();
+    fitAll();
+    loadDataStatus();
+    console.log('[Atlas] Init complete. Systems:', N, 'Edges:', edges.length);
+
+    // Load SDE data in background
+    loadSDE();
+  } catch (e) {
+    console.error('[Atlas] Init failed:', e);
+    setStatus('Failed: ' + e.message, 'red');
+    document.getElementById('canvas-wrap').innerHTML =
+      '<div style="display:flex;align-items:center;justify-content:center;height:100%;flex-direction:column;gap:12px">' +
+      '<div style="font-size:48px">⚠️</div>' +
+      '<div style="font-size:16px;color:var(--red)">Data Load Failed</div>' +
+      '<div style="font-size:12px;color:var(--text-dim)">' + e.message + '</div>' +
+      '<div style="font-size:12px;color:var(--text-dim)">Make sure systems_static.json exists in project root</div></div>';
+  }
+}
+
+async function loadSDE() {
+  try {
+    const [sdeResp, hubResp, missionsResp, typesResp, agentTypesResp, divsResp, stnNamesResp] = await Promise.all([
+      fetch('/sde_data.json'),
+      fetch('/mission_hubs.json'),
+      fetch('/missions_data.json'),
+      fetch('/types_names.json'),
+      fetch('/agent_types.json'),
+      fetch('/agent_divisions.json'),
+      fetch('/station_names.json'),
+    ]);
+    if (sdeResp.ok) {
+      SDE = await sdeResp.json();
+      console.log('[Atlas] SDE loaded:', SDE._meta);
+      const el = document.getElementById('stat-agents');
+      el.style.display = '';
+      el.textContent = `Agents: ${SDE._meta.agentCount.toLocaleString()}`;
+      loadDataStatus();
+    }
+    if (hubResp.ok) {
+      missionHubs = await hubResp.json();
+      console.log('[Atlas] Mission hubs loaded:', missionHubs.length);
+    }
+    if (missionsResp.ok) {
+      missionsData = await missionsResp.json();
+      console.log('[Atlas] Missions loaded:', missionsData._meta?.count);
+    }
+    if (typesResp.ok) {
+      typesNames = await typesResp.json();
+      console.log('[Atlas] Types names loaded:', Object.keys(typesNames).length);
+    }
+    if (agentTypesResp.ok) {
+      agentTypesNames = await agentTypesResp.json();
+      console.log('[Atlas] Agent types loaded:', Object.keys(agentTypesNames).length);
+    }
+    if (divsResp.ok) {
+      agentDivisions = await divsResp.json();
+      console.log('[Atlas] Agent divisions loaded:', Object.keys(agentDivisions).length);
+    }
+    if (stnNamesResp?.ok) {
+      stationNames = await stnNamesResp.json();
+      console.log('[Atlas] Station names loaded:', Object.keys(stationNames).length);
+    }
+  } catch (e) {
+    console.warn('[Atlas] SDE load failed:', e);
+  }
+}
+
+function processData() {
+  systems = SYS_DATA.systems;
+  nameToId = SYS_DATA.name_to_id || {};
+  sysIds=[]; sysX=[]; sysY=[]; sysSec=[]; sysRid=[]; sysNames=[];
+  const regionAccum = {};
+  for (const [sidStr, rec] of Object.entries(systems)) {
+    const sid = +sidStr;
+    const p2d = rec.position2D;
+    if (!p2d) continue;
+    sysIds.push(sid);
+    sysX.push(p2d.x);
+    sysY.push(p2d.y);
+    sysSec.push(rec.securityStatus || 0);
+    sysRid.push(rec.regionID || 0);
+    const nm = rec.name || {};
+    sysNames.push(nm.en || nm.zh || '?');
+    const rid = rec.regionID || 0;
+    if (!regionAccum[rid]) {
+      const rn = rec.regionName || {};
+      regionAccum[rid] = { name: rn.en || '', nameZh: rn.zh || '', systems: [] };
+    }
+    regionAccum[rid].systems.push(sid);
+  }
+  N = sysIds.length;
+  regions = regionAccum;
+  regionList = Object.entries(regions)
+    .map(([rid, r]) => ({ rid:+rid, name:r.name, nameZh:r.nameZh, count:r.systems.length }))
+    .sort((a,b) => a.name.localeCompare(b.name));
+  edgeSet = new Set();
+  edges = [];
+  for (const [sidStr, rec] of Object.entries(systems)) {
+    const sid = +sidStr;
+    for (const nb of (rec.neighborIDs || [])) {
+      const key = Math.min(sid,nb)+','+Math.max(sid,nb);
+      if (!edgeSet.has(key)) { edgeSet.add(key); edges.push([sid,nb]); }
+    }
+  }
+  computeRegionHulls();
+  computeRegionLabels();
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Convex Hull — Andrew's monotone chain
+// ═══════════════════════════════════════════════════════════════════════════
+function computeRegionHulls() {
+  const rPts = {};
+  for (let i = 0; i < N; i++) {
+    const rid = sysRid[i];
+    if (!rPts[rid]) rPts[rid] = [];
+    rPts[rid].push({ x: sysX[i], y: sysY[i] });
+  }
+  regionHulls = {};
+  for (const [rid, pts] of Object.entries(rPts)) {
+    if (pts.length < 3) continue;
+    regionHulls[rid] = convexHull(pts);
+  }
+}
+
+function convexHull(pts) {
+  const n = pts.length;
+  if (n < 3) return pts.slice();
+  const sorted = pts.slice().sort((a,b) => a.x - b.x || a.y - b.y);
+  const cross = (o,a,b) => (a.x-o.x)*(b.y-o.y) - (a.y-o.y)*(b.x-o.x);
+  const lower = [];
+  for (const p of sorted) {
+    while (lower.length >= 2 && cross(lower[lower.length-2], lower[lower.length-1], p) <= 0) lower.pop();
+    lower.push(p);
+  }
+  const upper = [];
+  for (let i = n-1; i >= 0; i--) {
+    const p = sorted[i];
+    while (upper.length >= 2 && cross(upper[upper.length-2], upper[upper.length-1], p) <= 0) upper.pop();
+    upper.push(p);
+  }
+  lower.pop(); upper.pop();
+  return lower.concat(upper);
+}
+
+function computeRegionLabels() {
+  regionLabelPos = {};
+  const rSum = {};
+  for (let i = 0; i < N; i++) {
+    const rid = sysRid[i];
+    if (!rSum[rid]) rSum[rid] = { sx:0, sy:0, n:0 };
+    rSum[rid].sx += sysX[i]; rSum[rid].sy += sysY[i]; rSum[rid].n++;
+  }
+  for (const [rid, s] of Object.entries(rSum)) {
+    regionLabelPos[rid] = { x: s.sx/s.n, y: s.sy/s.n };
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Canvas Rendering
+// ═══════════════════════════════════════════════════════════════════════════
+let canvas, ctx, miniCanvas, miniCtx;
+let W, H, rafId = null, needsRedraw = true;
+
+function initCanvas() {
+  canvas = document.getElementById('starmap');
+  ctx = canvas.getContext('2d');
+  miniCanvas = document.getElementById('minimap');
+  miniCtx = miniCanvas.getContext('2d');
+  resizeCanvas();
+  window.addEventListener('resize', resizeCanvas);
+  canvas.addEventListener('mousedown', onMouseDown);
+  canvas.addEventListener('mousemove', onMouseMove);
+  canvas.addEventListener('mouseup', onMouseUp);
+  canvas.addEventListener('mouseleave', onMouseLeave);
+  canvas.addEventListener('wheel', onWheel, { passive: false });
+  canvas.addEventListener('dblclick', onDblClick);
+  canvas.addEventListener('touchstart', onTouchStart, { passive: false });
+  canvas.addEventListener('touchmove', onTouchMove, { passive: false });
+  canvas.addEventListener('touchend', onTouchEnd);
+  requestRedraw();
+  renderLoop();
+}
+
+function resizeCanvas() {
+  const wrap = document.getElementById('canvas-wrap');
+  W = wrap.clientWidth; H = wrap.clientHeight;
+  canvas.width = W; canvas.height = H;
+  canvas.style.width = W+'px'; canvas.style.height = H+'px';
+  requestRedraw();
+}
+
+function requestRedraw() { needsRedraw = true; }
+
+function renderLoop() {
+  if (needsRedraw) { needsRedraw = false; draw(); }
+  rafId = requestAnimationFrame(renderLoop);
+}
+
+function draw() {
+  ctx.fillStyle = '#0a0a1e';
+  ctx.fillRect(0, 0, W, H);
+  const cx=view.cx, cy=view.cy, sc=view.scale;
+  const toSx = x => (x-cx)*sc+W/2;
+  const toSy = y => (y-cy)*sc+H/2;
+  const showHulls = document.getElementById('chk-hulls').checked;
+  const showLabels = document.getElementById('chk-labels').checked;
+  const showGates = document.getElementById('chk-gates').checked;
+  const showNames = document.getElementById('chk-names').checked;
+
+  // Region hulls
+  if (showHulls) {
+    ctx.lineWidth = 0.8;
+    for (const [rid, hull] of Object.entries(regionHulls)) {
+      if (filterRid !== null && +rid !== filterRid) continue;
+      ctx.strokeStyle = 'rgba(60,100,160,0.3)';
+      ctx.fillStyle = 'rgba(20,30,60,0.06)';
+      ctx.beginPath();
+      for (let i = 0; i < hull.length; i++) {
+        const sx = toSx(hull[i].x), sy = toSy(hull[i].y);
+        if (i === 0) ctx.moveTo(sx, sy); else ctx.lineTo(sx, sy);
+      }
+      ctx.closePath(); ctx.fill(); ctx.stroke();
+    }
+  }
+
+  // Stargate edges
+  if (showGates) {
+    ctx.strokeStyle = 'rgba(50,65,110,0.15)';
+    ctx.lineWidth = 0.5;
+    ctx.beginPath();
+    for (const [src, dst] of edges) {
+      const si = sysIdx(src), di = sysIdx(dst);
+      if (si < 0 || di < 0) continue;
+      if (filterRid !== null && sysRid[si] !== filterRid && sysRid[di] !== filterRid) continue;
+      const x1=toSx(sysX[si]), y1=toSy(sysY[si]);
+      const x2=toSx(sysX[di]), y2=toSy(sysY[di]);
+      if ((x1<-50&&x2<-50)||(x1>W+50&&x2>W+50)) continue;
+      if ((y1<-50&&y2<-50)||(y1>H+50&&y2>H+50)) continue;
+      ctx.moveTo(x1,y1); ctx.lineTo(x2,y2);
+    }
+    ctx.stroke();
+  }
+
+  // Systems
+  const dotBase = Math.max(1.5, Math.min(5, 3*sc/5e-17));
+  const dotHl = dotBase * 2.5;
+  for (let i = 0; i < N; i++) {
+    if (filterRid !== null && sysRid[i] !== filterRid) continue;
+    const sx = toSx(sysX[i]), sy = toSy(sysY[i]);
+    if (sx<-10||sx>W+10||sy<-10||sy>H+10) continue;
+    const sec = sysSec[i];
+    const isHl = sysIds[i] === highlight;
+    const r = isHl ? dotHl : dotBase;
+    let cr, cg, cb;
+    if (sec >= 0.5) { cr=46; cg=213; cb=115; }
+    else if (sec > 0) { cr=255; cg=165; cb=2; }
+    else { cr=255; cg=71; cb=87; }
+    if (isHl) {
+      const grad = ctx.createRadialGradient(sx,sy,0,sx,sy,r*3);
+      grad.addColorStop(0, `rgba(${cr},${cg},${cb},0.4)`);
+      grad.addColorStop(1, `rgba(${cr},${cg},${cb},0)`);
+      ctx.fillStyle = grad;
+      ctx.beginPath(); ctx.arc(sx,sy,r*3,0,Math.PI*2); ctx.fill();
+    }
+    ctx.fillStyle = `rgb(${cr},${cg},${cb})`;
+    ctx.beginPath(); ctx.arc(sx,sy,r,0,Math.PI*2); ctx.fill();
+    if (showNames && sc > 3e-16) {
+      ctx.fillStyle = 'rgba(180,200,230,0.7)';
+      ctx.font = '9px sans-serif';
+      ctx.fillText(sysNames[i], sx+r+3, sy+3);
+    }
+  }
+
+  // Region labels
+  if (showLabels) {
+    ctx.font = '11px sans-serif';
+    ctx.textAlign = 'center';
+    for (const [rid, pos] of Object.entries(regionLabelPos)) {
+      if (filterRid !== null && +rid !== filterRid) continue;
+      const sx = toSx(pos.x), sy = toSy(pos.y);
+      if (sx<-100||sx>W+100||sy<-100||sy>H+100) continue;
+      ctx.fillStyle = 'rgba(100,120,160,0.6)';
+      ctx.fillText(regions[rid] ? regions[rid].name : rid, sx, sy);
+    }
+    ctx.textAlign = 'left';
+  }
+
+  // Highlight ring
+  if (highlight !== null) {
+    const hi = sysIdx(highlight);
+    if (hi >= 0) {
+      const sx=toSx(sysX[hi]), sy=toSy(sysY[hi]);
+      ctx.strokeStyle = 'rgba(255,170,0,0.8)';
+      ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.arc(sx,sy,dotHl*2.5,0,Math.PI*2); ctx.stroke();
+    }
+  }
+
+  drawMinimap();
+  const statCoords = document.getElementById('stat-coords');
+  if (hoverSys !== null) {
+    const i = sysIdx(hoverSys);
+    if (i >= 0) statCoords.textContent = `${sysNames[i]} [${sysSec[i].toFixed(2)}] ID:${hoverSys}`;
+  }
+}
+
+function drawMinimap() {
+  const mw=180, mh=120;
+  miniCtx.fillStyle = 'rgba(10,10,30,0.85)';
+  miniCtx.fillRect(0,0,mw,mh);
+  let x0=Infinity,x1=-Infinity,y0=Infinity,y1=-Infinity;
+  for (let i=0;i<N;i++) {
+    if (sysX[i]<x0)x0=sysX[i]; if (sysX[i]>x1)x1=sysX[i];
+    if (sysY[i]<y0)y0=sysY[i]; if (sysY[i]>y1)y1=sysY[i];
+  }
+  const dx=x1-x0||1, dy=y1-y0||1;
+  const s = Math.min(mw/dx, mh/dy)*0.9;
+  const ox=(mw-dx*s)/2, oy=(mh-dy*s)/2;
+  for (let i=0;i<N;i++) {
+    const px=(sysX[i]-x0)*s+ox, py=(sysY[i]-y0)*s+oy;
+    const sec=sysSec[i];
+    miniCtx.fillStyle = sec>=0.5?'#2ed573':sec>0?'#ffa502':'#ff4757';
+    miniCtx.fillRect(px,py,1,1);
+  }
+  const vx0=(view.cx-W/2/view.scale-x0)*s+ox;
+  const vy0=(view.cy-H/2/view.scale-y0)*s+oy;
+  const vw=W/view.scale*s, vh=H/view.scale*s;
+  miniCtx.strokeStyle='rgba(255,170,0,0.6)'; miniCtx.lineWidth=1;
+  miniCtx.strokeRect(vx0,vy0,vw,vh);
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Index helper
+// ═══════════════════════════════════════════════════════════════════════════
+let _idxMap = null;
+function sysIdx(id) {
+  if (!_idxMap) { _idxMap = new Map(); for (let i=0;i<N;i++) _idxMap.set(sysIds[i],i); }
+  return _idxMap.get(id) ?? -1;
+}
+
+function resolveSystem(nameOrId) {
+  if (!nameOrId) return null;
+  const q = (''+nameOrId).trim().toLowerCase();
+  const id = nameToId[q];
+  if (id && systems[id]) return id;
+  const cap = q.charAt(0).toUpperCase() + q.slice(1);
+  const id2 = nameToId[cap];
+  if (id2 && systems[id2]) return id2;
+  for (let i = 0; i < N; i++) {
+    if (sysNames[i].toLowerCase().includes(q)) return sysIds[i];
+  }
+  return null;
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Mouse / Touch
+// ═══════════════════════════════════════════════════════════════════════════
+let dragging=false, dragStart=null, dragMoved=false, pinchDist=0;
+
+function screenToWorld(sx,sy) {
+  return { x:(sx-W/2)/view.scale+view.cx, y:(sy-H/2)/view.scale+view.cy };
+}
+
+function findNearest(wx,wy) {
+  let best=-1, bestD=Infinity;
+  const thresh = Math.max(2e15, 20/view.scale);
+  for (let i=0;i<N;i++) {
+    if (filterRid!==null && sysRid[i]!==filterRid) continue;
+    const dx=sysX[i]-wx, dy=sysY[i]-wy;
+    const d=Math.sqrt(dx*dx+dy*dy);
+    if (d<bestD && d<thresh) { bestD=d; best=i; }
+  }
+  return best>=0 ? sysIds[best] : null;
+}
+
+function onMouseDown(e) {
+  dragging=true; dragMoved=false;
+  dragStart={x:e.clientX,y:e.clientY,vcx:view.cx,vcy:view.cy};
+  canvas.classList.add('grabbing');
+}
+
+function onMouseMove(e) {
+  const rect=canvas.getBoundingClientRect();
+  const sx=e.clientX-rect.left, sy=e.clientY-rect.top;
+  if (dragging && dragStart) {
+    const dx=e.clientX-dragStart.x, dy=e.clientY-dragStart.y;
+    if (Math.abs(dx)>2||Math.abs(dy)>2) dragMoved=true;
+    view.cx=dragStart.vcx-dx/view.scale;
+    view.cy=dragStart.vcy-dy/view.scale;
+    requestRedraw();
+  }
+  const w=screenToWorld(sx,sy);
+  const sid=findNearest(w.x,w.y);
+  if (sid!==hoverSys) {
+    hoverSys=sid;
+    const tip=document.getElementById('tooltip');
+    if (sid!==null) {
+      const i=sysIdx(sid);
+      tip.textContent=`${sysNames[i]} [${sysSec[i].toFixed(2)}]`;
+      tip.style.left=(sx+14)+'px'; tip.style.top=(sy-10)+'px';
+      tip.style.display='block';
+      canvas.style.cursor='pointer';
+    } else {
+      tip.style.display='none';
+      canvas.style.cursor=dragging?'grabbing':'grab';
+    }
+    requestRedraw();
+  }
+}
+
+function onMouseUp(e) {
+  canvas.classList.remove('grabbing');
+  if (!dragMoved && dragStart) {
+    const rect=canvas.getBoundingClientRect();
+    const sx=e.clientX-rect.left, sy=e.clientY-rect.top;
+    const w=screenToWorld(sx,sy);
+    const sid=findNearest(w.x,w.y);
+    if (sid!==null) { highlight=sid; showDetail(sid); requestRedraw(); }
+  }
+  dragging=false; dragStart=null;
+}
+
+function onMouseLeave() {
+  dragging=false; dragStart=null;
+  canvas.classList.remove('grabbing');
+  document.getElementById('tooltip').style.display='none';
+  hoverSys=null;
+}
+
+function onWheel(e) {
+  e.preventDefault();
+  const rect=canvas.getBoundingClientRect();
+  const sx=e.clientX-rect.left, sy=e.clientY-rect.top;
+  const w=screenToWorld(sx,sy);
+  const factor = e.deltaY<0 ? 1.15 : 1/1.15;
+  view.scale *= factor;
+  view.scale = Math.max(1e-19, Math.min(1e-13, view.scale));
+  view.cx = w.x-(sx-W/2)/view.scale;
+  view.cy = w.y-(sy-H/2)/view.scale;
+  requestRedraw();
+}
+
+function onDblClick(e) {
+  const rect=canvas.getBoundingClientRect();
+  const sx=e.clientX-rect.left, sy=e.clientY-rect.top;
+  const w=screenToWorld(sx,sy);
+  const sid=findNearest(w.x,w.y);
+  if (sid!==null) {
+    const i=sysIdx(sid);
+    view.cx=sysX[i]; view.cy=sysY[i];
+    view.scale=Math.min(view.scale*3, 1e-14);
+    highlight=sid; showDetail(sid); requestRedraw();
+  }
+}
+
+function onTouchStart(e) {
+  if (e.touches.length===1) {
+    e.preventDefault();
+    const t=e.touches[0];
+    dragging=true; dragMoved=false;
+    dragStart={x:t.clientX,y:t.clientY,vcx:view.cx,vcy:view.cy};
+  } else if (e.touches.length===2) {
+    e.preventDefault();
+    const dx=e.touches[0].clientX-e.touches[1].clientX;
+    const dy=e.touches[0].clientY-e.touches[1].clientY;
+    pinchDist=Math.sqrt(dx*dx+dy*dy);
+  }
+}
+
+function onTouchMove(e) {
+  if (e.touches.length===1 && dragging && dragStart) {
+    e.preventDefault();
+    const t=e.touches[0];
+    const dx=t.clientX-dragStart.x, dy=t.clientY-dragStart.y;
+    if (Math.abs(dx)>2||Math.abs(dy)>2) dragMoved=true;
+    view.cx=dragStart.vcx-dx/view.scale;
+    view.cy=dragStart.vcy-dy/view.scale;
+    requestRedraw();
+  } else if (e.touches.length===2) {
+    e.preventDefault();
+    const dx=e.touches[0].clientX-e.touches[1].clientX;
+    const dy=e.touches[0].clientY-e.touches[1].clientY;
+    const d=Math.sqrt(dx*dx+dy*dy);
+    if (pinchDist>0) {
+      view.scale *= d/pinchDist;
+      view.scale = Math.max(1e-19, Math.min(1e-13, view.scale));
+      pinchDist=d; requestRedraw();
+    }
+  }
+}
+
+function onTouchEnd(e) {
+  if (e.touches.length===0) {
+    if (!dragMoved && dragStart) {
+      const sid=findNearest(
+        (dragStart.x-W/2)/view.scale+view.cx,
+        (dragStart.y-H/2)/view.scale+view.cy
+      );
+      if (sid!==null) { highlight=sid; showDetail(sid); requestRedraw(); }
+    }
+    dragging=false; dragStart=null; pinchDist=0;
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// View Controls
+// ═══════════════════════════════════════════════════════════════════════════
+function fitAll() {
+  let x0=Infinity,x1=-Infinity,y0=Infinity,y1=-Infinity;
+  for (let i=0;i<N;i++) {
+    if (filterRid!==null && sysRid[i]!==filterRid) continue;
+    if (sysX[i]<x0)x0=sysX[i]; if (sysX[i]>x1)x1=sysX[i];
+    if (sysY[i]<y0)y0=sysY[i]; if (sysY[i]>y1)y1=sysY[i];
+  }
+  view.cx=(x0+x1)/2; view.cy=(y0+y1)/2;
+  const dx=x1-x0||1, dy=y1-y0||1;
+  view.scale=Math.min(W/dx, H/dy)*0.85;
+  requestRedraw();
+}
+
+function resetView() {
+  filterRid=null;
+  document.getElementById('sel-region').value='';
+  highlight=null;
+  fitAll();
+}
+
+function fitRegion(name) {
+  const r=regionList.find(r=>r.name===name);
+  if (!r) return;
+  filterRid=r.rid;
+  document.getElementById('sel-region').value=name;
+  let x0=Infinity,x1=-Infinity,y0=Infinity,y1=-Infinity;
+  for (let i=0;i<N;i++) {
+    if (sysRid[i]!==r.rid) continue;
+    if (sysX[i]<x0)x0=sysX[i]; if (sysX[i]>x1)x1=sysX[i];
+    if (sysY[i]<y0)y0=sysY[i]; if (sysY[i]>y1)y1=sysY[i];
+  }
+  view.cx=(x0+x1)/2; view.cy=(y0+y1)/2;
+  const dx=x1-x0||1, dy=y1-y0||1;
+  view.scale=Math.min(W/dx, H/dy)*0.85;
+  highlight=null; requestRedraw();
+}
+
+function onRegionChange() {
+  const v=document.getElementById('sel-region').value;
+  if (!v) { filterRid=null; fitAll(); }
+  else { fitRegion(v); }
+}
+
+function populateRegionSelect() {
+  const sel=document.getElementById('sel-region');
+  for (const r of regionList) {
+    const opt=document.createElement('option');
+    opt.value=r.name;
+    opt.textContent=`${r.name} (${r.nameZh}) — ${r.count}`;
+    sel.appendChild(opt);
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// System Detail Panel
+// ═══════════════════════════════════════════════════════════════════════════
+function showDetail(sid) {
+  const rec = systems[sid];
+  if (!rec) return;
+  document.getElementById('detail-overlay').classList.add('open');
+  const nm = rec.name || {};
+  document.getElementById('detail-title').textContent = `${nm.en||'?'} ${nm.zh?'('+nm.zh+')':''}`;
+
+  const sec = rec.securityStatus || 0;
+  let secClass, secColor;
+  if (sec>=0.5) { secClass='Highsec'; secColor='var(--green)'; }
+  else if (sec>0) { secClass='Lowsec'; secColor='var(--yellow)'; }
+  else { secClass='Null/Wormhole'; secColor='var(--red)'; }
+  const rn=rec.regionName||{}, cn=rec.constellationName||{};
+
+  let html = `<div class="dtree">
+    <div class="node"><span class="node-key">Security</span> <span class="node-val" style="color:${secColor}">${sec.toFixed(4)} (${secClass})</span></div>
+    <div class="node"><span class="node-key">Class</span> <span class="node-val">${rec.securityClass||'-'}</span></div>
+    <div class="node"><span class="node-key">Region</span> <span class="node-val">${rn.en||'-'} ${rn.zh?'('+rn.zh+')':''}</span></div>
+    <div class="node"><span class="node-key">Constellation</span> <span class="node-val">${cn.en||'-'} ${cn.zh?'('+cn.zh+')':''}</span></div>
+    <div class="node"><span class="node-key">System ID</span> <span class="node-val">${sid}</span></div>
+    <div class="node"><span class="node-key">Planets</span> <span class="node-val">${rec.planetCount||'-'}</span></div>`;
+
+  const flags = [];
+  if (rec.isBorder) flags.push('Border');
+  if (rec.isHub) flags.push('Hub');
+  if (rec.isRegional) flags.push('Regional');
+  if (rec.isInternational) flags.push('International');
+  if (flags.length) html += `<div class="node"><span class="node-key">Flags</span> <span class="node-val">${flags.join(', ')}</span></div>`;
+
+  // Agents (from SDE)
+  if (SDE) {
+    const stns = rec.stations || [];
+    const agentsHere = [];
+    for (const st of stns) {
+      const stnAgents = SDE.agentsByLocation[st.id] || [];
+      for (const a of stnAgents) agentsHere.push(a);
+    }
+    if (agentsHere.length) {
+      html += `<div class="sep"></div><div style="font-size:11px;font-weight:600;color:var(--accent);margin:6px 0">Agents (${agentsHere.length})</div>`;
+      agentsHere.sort((a,b) => b.level - a.level);
+      for (const a of agentsHere) {
+        const corpName = SDE.corpsById[a.corpID]?.name || `Corp ${a.corpID}`;
+        const divName = AGENT_DIVISION_NAMES[a.divisionID] || `Div ${a.divisionID}`;
+        html += `<div class="agent-card">
+          <div class="agent-name">${a.name} <span class="agent-level l${a.level}">L${a.level}</span></div>
+          <div class="agent-detail">${corpName} · ${divName}${a.isLocator?' · Locator':''}</div>
+        </div>`;
+      }
+    }
+  }
+
+  // Stargates
+  const nbs = rec.neighborIDs || [];
+  if (nbs.length) {
+    html += `<div class="sep"></div><div style="font-size:11px;font-weight:600;color:var(--blue);margin:6px 0">Stargates (${nbs.length})</div><div class="gate-list">`;
+    for (const nb of nbs) {
+      const nr=systems[nb]; if (!nr) continue;
+      const nnm=nr.name||{};
+      html += `<span class="gate-chip" onclick="jumpToSystem(${nb})">${nnm.en||'?'} [${(nr.securityStatus||0).toFixed(2)}]</span>`;
+    }
+    html += '</div>';
+  }
+
+  // Stations
+  const stns = rec.stations || [];
+  if (stns.length) {
+    html += `<div class="sep"></div><div style="font-size:11px;font-weight:600;color:var(--blue);margin:6px 0">Stations (${stns.length})</div>`;
+    for (const st of stns) {
+      const stnName = getStationName(st.id, st.typeID);
+      const ownerCorp = SDE?.corpsById[st.ownerID]?.name || st.ownerID;
+      const stnServices = SDE?.stationsById?.[st.id]?.services || [];
+      const stnAgents = SDE?.agentsByLocation?.[st.id] || [];
+      const hasAgents = stnAgents.length > 0;
+      html += `<div class="stn-card" ${hasAgents ? 'style="cursor:pointer" onclick="this.querySelector(\'.stn-agents\').classList.toggle(\'hidden\')"' : ''}>
+        <div class="stn-name">${stnName}${hasAgents ? ' <span style="font-size:9px;color:var(--accent)">▸ '+stnAgents.length+' agents</span>' : ''}</div>
+        <div class="stn-detail">Type: ${st.typeID} · Owner: ${ownerCorp}`;
+      if (st.reprocessingEfficiency != null) html += ` · Reprocess: ${(st.reprocessingEfficiency*100).toFixed(0)}%`;
+      html += `</div>`;
+      if (stnServices.length) html += `<div class="stn-detail" style="margin-top:2px">Services: ${stnServices.join(', ')}</div>`;
+      if (hasAgents) {
+        const sorted = [...stnAgents].sort((a,b) => b.level - a.level);
+        html += `<div class="stn-agents hidden" style="margin-top:4px;padding-top:4px;border-top:1px solid #1a2a4a">`;
+        for (const a of sorted) {
+          const corpName = SDE?.corpsById[a.corpID]?.name || `Corp ${a.corpID}`;
+          const divName = AGENT_DIVISION_NAMES[a.divisionID] || `Div ${a.divisionID}`;
+          html += `<div class="agent-card">
+            <div class="agent-name">${a.name} <span class="agent-level l${a.level}">L${a.level}</span>${a.isLocator?' <span style="font-size:8px;color:var(--text-dim)">📍Locator</span>':''}</div>
+            <div class="agent-detail">${corpName} · ${divName} · ${AGENT_TYPE_NAMES[a.agentTypeID]||'Unknown'}</div>
+          </div>`;
+        }
+        html += `</div>`;
+      }
+      html += `</div>`;
+    }
+  }
+
+  // Coordinates
+  const p2d=rec.position2D||{}, pos3d=rec.position||{};
+  html += `<div class="sep"></div>
+    <div style="font-size:11px;font-weight:600;color:var(--blue);margin:6px 0">Coordinates</div>
+    <div class="node"><span class="node-key">2D</span> <span class="node-val">${(p2d.x||0).toExponential(4)}, ${(p2d.y||0).toExponential(4)}</span></div>
+    <div class="node"><span class="node-key">3D</span> <span class="node-val">${(pos3d.x||0).toExponential(4)}, ${(pos3d.y||0).toExponential(4)}, ${(pos3d.z||0).toExponential(4)}</span></div>`;
+
+  // ESI actions
+  html += `<div class="sep"></div>
+    <div class="btn-row">
+      <button class="btn accent" onclick="doEsiQuery(${sid})">⚡ ESI Query</button>
+      <button class="btn" onclick="copyToClipboard('${nm.en||''}')">📋 Copy Name</button>
+    </div>`;
+  html += '</div>';
+  document.getElementById('detail-body').innerHTML = html;
+}
+
+function closeDetail() { document.getElementById('detail-overlay').classList.remove('open'); }
+
+function jumpToSystem(sid) {
+  const i=sysIdx(sid);
+  if (i<0) return;
+  highlight=sid;
+  view.cx=sysX[i]; view.cy=sysY[i];
+  showDetail(sid); requestRedraw();
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Sidebar
+// ═══════════════════════════════════════════════════════════════════════════
+function toggleSidebar() {
+  document.getElementById('sidebar').classList.toggle('collapsed');
+  setTimeout(() => { resizeCanvas(); requestRedraw(); }, 260);
+}
+
+function togglePanel(id) {
+  document.getElementById(id).classList.toggle('open');
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Status
+// ═══════════════════════════════════════════════════════════════════════════
+function setStatus(text, color) {
+  document.getElementById('status-text').textContent = text;
+  document.getElementById('status-dot').style.background = `var(--${color})`;
+}
+
+function loadDataStatus() {
+  const el = document.getElementById('data-status-body');
+  let html = `<div style="font-size:11px;line-height:1.8">
+    <div>Systems: <b>${N.toLocaleString()}</b></div>
+    <div>Stargate Edges: <b>${edges.length.toLocaleString()}</b></div>
+    <div>Regions: <b>${regionList.length}</b></div>
+    <div>Convex Hulls: <b>${Object.keys(regionHulls).length}</b></div>`;
+  if (SDE) {
+    html += `<div class="sep"></div>
+    <div>Agents: <b>${SDE._meta.agentCount.toLocaleString()}</b></div>
+    <div>Stations: <b>${SDE._meta.stationCount.toLocaleString()}</b></div>
+    <div>Corporations: <b>${SDE._meta.corpCount.toLocaleString()}</b></div>
+    <div>Factions: <b>${SDE._meta.factionCount}</b></div>
+    <div>Missions: <b>${SDE._meta.missionCount.toLocaleString()}</b></div>`;
+  }
+  html += `<div class="sep"></div>
+    <div style="color:var(--text-dim)">Data: systems_static.json</div>
+    <div style="color:var(--text-dim)">SDE Version: ${SYS_DATA.sde_version||'N/A'}</div>
+  </div>`;
+  el.innerHTML = html;
+  document.getElementById('stat-systems').textContent = `Systems: ${N.toLocaleString()}`;
+  document.getElementById('stat-gates').textContent = `Gates: ${edges.length.toLocaleString()}`;
+  document.getElementById('stat-regions').textContent = `Regions: ${regionList.length}`;
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Global Search
+// ═══════════════════════════════════════════════════════════════════════════
+function doGlobalSearch() {
+  const q = document.getElementById('global-search').value.trim();
+  if (!q) return;
+  const sid = resolveSystem(q);
+  if (sid) { jumpToSystem(sid); }
+  else { setStatus(`Not found: ${q}`, 'yellow'); }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// ESI Integration
+// ═══════════════════════════════════════════════════════════════════════════
+const esiCache = {};
+
+const ESI_BASE = 'https://esi.evetech.net/latest';
+
+async function esiFetch(path) {
+  if (esiCache[path]) return esiCache[path];
+  try {
+    const resp = await fetch(ESI_BASE + path, {
+      headers: { 'Accept': 'application/json' }
+    });
+    if (!resp.ok) return null;
+    const data = await resp.json();
+    esiCache[path] = data;
+    return data;
+  } catch { return null; }
+}
+
+async function esiSearch(query, categories) {
+  const catStr = categories.join(',');
+  const data = await esiFetch(`/search/?search=${encodeURIComponent(query)}&categories=${catStr}&strict=false`);
+  return data;
+}
+
+async function doEsiQuery(sid) {
+  setStatus(`ESI query: ${sid}…`, 'yellow');
+  const [kills, jumps] = await Promise.all([
+    esiFetch('/universe/system_kills/'),
+    esiFetch('/universe/system_jumps/'),
+  ]);
+  const kd = kills ? kills.find(k => k.system_id === sid) : null;
+  const jd = jumps ? jumps.find(j => j.system_id === sid) : null;
+  const nm = systems[sid]?.name || {};
+  let report = `=== ESI Query: ${nm.en} (${sid}) ===\n\n`;
+  if (kd) report += `NPC Kills:  ${kd.npc_kills}\nShip Kills: ${kd.ship_kills}\nPod Kills:  ${kd.pod_kills}\n`;
+  else report += 'Kill data: N/A\n';
+  if (jd) report += `Ship Jumps: ${jd.ship_jumps}\n`;
+  else report += 'Jump data: N/A\n';
+  showReports('ESI: ' + nm.en, report);
+  setStatus('ESI query done', 'green');
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// BFS helper
+// ═══════════════════════════════════════════════════════════════════════════
+function bfsRange(startId, maxJumps) {
+  const visited = new Map();
+  visited.set(startId, 0);
+  let frontier = [startId];
+  for (let d=1; d<=maxJumps; d++) {
+    const next = [];
+    for (const s of frontier) {
+      const rec=systems[s]; if (!rec) continue;
+      for (const nb of (rec.neighborIDs||[])) {
+        if (!visited.has(nb)) { visited.set(nb, d); next.push(nb); }
+      }
+    }
+    frontier = next;
+  }
+  return visited;
+}
+
+function bfsDist(startId, endId, maxDepth=50) {
+  const visited = new Map();
+  visited.set(startId, 0);
+  let frontier = [startId];
+  for (let d=1; d<=maxDepth; d++) {
+    const next = [];
+    for (const s of frontier) {
+      const rec=systems[s]; if (!rec) continue;
+      for (const nb of (rec.neighborIDs||[])) {
+        if (nb === endId) return d;
+        if (!visited.has(nb)) { visited.set(nb, d); next.push(nb); }
+      }
+    }
+    frontier = next;
+  }
+  return -1;
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Route Scan
+// ═══════════════════════════════════════════════════════════════════════════
+async function doRouteScan() {
+  const origVal = document.getElementById('inp-origin').value.trim();
+  const destVal = document.getElementById('inp-dest').value.trim();
+  if (!origVal || !destVal) { setStatus('Need both origin and destination', 'yellow'); return; }
+  const origId = resolveSystem(origVal);
+  const destId = resolveSystem(destVal);
+  if (!origId) { setStatus('Origin not found', 'red'); return; }
+  if (!destId) { setStatus('Destination not found', 'red'); return; }
+
+  setStatus(`Route: ${origVal} → ${destVal}…`, 'yellow');
+
+  // BFS shortest path
+  const parent = new Map();
+  parent.set(origId, null);
+  let frontier = [origId];
+  let found = false;
+  for (let d=1; d<=200; d++) {
+    const next = [];
+    for (const s of frontier) {
+      const rec=systems[s]; if (!rec) continue;
+      for (const nb of (rec.neighborIDs||[])) {
+        if (!parent.has(nb)) { parent.set(nb, s); next.push(nb); }
+        if (nb === destId) { found = true; break; }
+      }
+      if (found) break;
+    }
+    if (found) break;
+    frontier = next;
+  }
+
+  if (!parent.has(destId)) {
+    showReports('Route', `No path found from ${origVal} to ${destVal} within 200 jumps.`);
+    setStatus('No path', 'red');
+    return;
+  }
+
+  // Reconstruct path
+  const path = [];
+  let cur = destId;
+  while (cur !== null) { path.push(cur); cur = parent.get(cur); }
+  path.reverse();
+
+  // Get ESI data
+  const [killsResp, jumpsResp] = await Promise.all([
+    esiFetch('/universe/system_kills/'),
+    esiFetch('/universe/system_jumps/'),
+  ]);
+
+  let report = `=== Route: ${origVal} → ${destVal} (${path.length-1} jumps) ===\n\n`;
+  for (let i=0; i<path.length; i++) {
+    const sid = path[i];
+    const nm = systems[sid]?.name || {};
+    const sec = (systems[sid]?.securityStatus||0).toFixed(2);
+    const kl = killsResp ? killsResp.find(k=>k.system_id===sid) : null;
+    const jl = jumpsResp ? jumpsResp.find(j=>j.system_id===sid) : null;
+    let extra = '';
+    if (kl) extra += ` kills:${kl.npc_kills+kl.ship_kills}`;
+    if (jl) extra += ` jumps:${jl.ship_jumps}`;
+    report += `  ${String(i).padStart(3)} ${(nm.en||'?').padEnd(22)} [${sec}]${extra}\n`;
+  }
+
+  showReports('Route', report);
+  highlight = destId;
+  fitToSet(path);
+  requestRedraw();
+  setStatus(`Route: ${path.length-1} jumps`, 'green');
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Full Scan / Quick Scan
+// ═══════════════════════════════════════════════════════════════════════════
+async function doFullScan() {
+  const origin = document.getElementById('inp-origin').value.trim();
+  const jumps = parseInt(document.getElementById('inp-jumps').value) || 2;
+  if (!origin) return;
+  const sid = resolveSystem(origin);
+  if (!sid) { setStatus('System not found', 'red'); return; }
+
+  setStatus(`Scanning ${origin} ${jumps}j…`, 'yellow');
+  const visited = bfsRange(sid, jumps);
+
+  const [killsResp, jumpsResp] = await Promise.all([
+    esiFetch('/universe/system_kills/'),
+    esiFetch('/universe/system_jumps/'),
+  ]);
+
+  let report = `=== Full Scan: ${origin} (${jumps} jumps) ===\n`;
+  report += `Systems: ${visited.size}\n\n`;
+
+  const rows = [];
+  for (const [s, dist] of visited) {
+    const rec=systems[s]; if (!rec) continue;
+    const nm=rec.name||{};
+    const sec=rec.securityStatus||0;
+    const kl = killsResp?killsResp.find(k=>k.system_id===s):null;
+    const jl = jumpsResp?jumpsResp.find(j=>j.system_id===s):null;
+    const kills = kl ? kl.npc_kills+kl.ship_kills : 0;
+    const jumps2 = jl ? jl.ship_jumps : 0;
+    rows.push({ sid:s, name:nm.en||'?', sec, dist, kills, jumps:jumps2 });
+  }
+  rows.sort((a,b) => a.dist - b.dist || b.kills - a.kills);
+
+  report += `${'#'.padStart(3)} ${'System'.padEnd(22)} ${'Sec'.padEnd(6)} ${'J'.padStart(3)} ${'Kills'.padStart(6)} ${'Jumps'.padStart(6)}\n`;
+  report += '─'.repeat(55) + '\n';
+  for (const r of rows) {
+    report += `${String(r.dist).padStart(3)} ${r.name.padEnd(22)} ${r.sec.toFixed(2).padEnd(6)} ${String(r.jumps).padStart(3)} ${String(r.kills).padStart(6)} ${String(r.jumps).padStart(6)}\n`;
+  }
+
+  showReports('Full Scan', report);
+  fitToSet([...visited.keys()]);
+  requestRedraw();
+  setStatus(`Scan done: ${visited.size} systems`, 'green');
+}
+
+async function doQuickScan() {
+  const origin = document.getElementById('inp-origin').value.trim();
+  const jumps = parseInt(document.getElementById('inp-jumps').value) || 2;
+  if (!origin) return;
+  const sid = resolveSystem(origin);
+  if (!sid) { setStatus('System not found', 'red'); return; }
+
+  setStatus(`Quick scan ${origin} ${jumps}j…`, 'yellow');
+  const visited = bfsRange(sid, jumps);
+
+  const [killsResp, jumpsResp] = await Promise.all([
+    esiFetch('/universe/system_kills/'),
+    esiFetch('/universe/system_jumps/'),
+  ]);
+
+  let totalKills=0, totalJumps2=0;
+  for (const [s] of visited) {
+    const kl = killsResp?killsResp.find(k=>k.system_id===s):null;
+    const jl = jumpsResp?jumpsResp.find(j=>j.system_id===s):null;
+    if (kl) totalKills += kl.npc_kills + kl.ship_kills;
+    if (jl) totalJumps2 += jl.ship_jumps;
+  }
+
+  const report = `Quick Scan: ${origin} (${jumps}j)\nSystems: ${visited.size} | Kills: ${totalKills} | Jumps: ${totalJumps2}`;
+  showReports('Quick Scan', report);
+  setStatus(`Quick scan done`, 'green');
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Overview
+// ═══════════════════════════════════════════════════════════════════════════
+async function doOverview() {
+  const origin = document.getElementById('inp-origin').value.trim();
+  const jumps = parseInt(document.getElementById('inp-jumps').value) || 2;
+  if (!origin) return;
+  const sid = resolveSystem(origin);
+  if (!sid) { setStatus('System not found', 'red'); return; }
+
+  setStatus(`Overview ${origin}…`, 'yellow');
+  const visited = bfsRange(sid, jumps);
+
+  const [killsResp, jumpsResp] = await Promise.all([
+    esiFetch('/universe/system_kills/'),
+    esiFetch('/universe/system_jumps/'),
+  ]);
+
+  let totalSec=0, highCount=0, lowCount=0, nullCount=0;
+  let totalKills=0, totalJumps2=0;
+  const regionSet = new Set();
+  const stationSystems = [];
+  let agentCount = 0;
+
+  for (const [s, dist] of visited) {
+    const rec=systems[s]; if (!rec) continue;
+    const sec = rec.securityStatus||0;
+    totalSec += sec;
+    if (sec>=0.5) highCount++; else if (sec>0) lowCount++; else nullCount++;
+    regionSet.add(rec.regionID);
+
+    const kl = killsResp?killsResp.find(k=>k.system_id===s):null;
+    const jl = jumpsResp?jumpsResp.find(j=>j.system_id===s):null;
+    if (kl) totalKills += kl.npc_kills + kl.ship_kills;
+    if (jl) totalJumps2 += jl.ship_jumps;
+
+    const stns = rec.stations||[];
+    if (stns.length > 0) stationSystems.push({ sid:s, count:stns.length });
+
+    if (SDE) {
+      for (const st of stns) {
+        agentCount += (SDE.agentsByLocation[st.id]||[]).length;
+      }
+    }
+  }
+
+  const avgSec = (totalSec / visited.size).toFixed(4);
+
+  let maxKillSid = null, maxKillVal = 0;
+  if (killsResp) {
+    for (const [s] of visited) {
+      const kl = killsResp.find(k=>k.system_id===s);
+      if (kl && (kl.npc_kills+kl.ship_kills) > maxKillVal) {
+        maxKillVal = kl.npc_kills + kl.ship_kills;
+        maxKillSid = s;
+      }
+    }
+  }
+
+  let maxJumpSid = null, maxJumpVal = 0;
+  if (jumpsResp) {
+    for (const [s] of visited) {
+      const jl = jumpsResp.find(j=>j.system_id===s);
+      if (jl && jl.ship_jumps > maxJumpVal) {
+        maxJumpVal = jl.ship_jumps;
+        maxJumpSid = s;
+      }
+    }
+  }
+
+  let report = `=== Overview: ${origin} (${jumps} jumps radius) ===\n\n`;
+  report += `Systems in range:  ${visited.size}\n`;
+  report += `Regions covered:   ${regionSet.size}\n`;
+  report += `Average Security:  ${avgSec}\n`;
+  report += `  Highsec: ${highCount}  Lowsec: ${lowCount}  Null/WH: ${nullCount}\n\n`;
+
+  report += `── Activity ──\n`;
+  report += `Total NPC+Ship Kills: ${totalKills.toLocaleString()}\n`;
+  report += `Total Ship Jumps:     ${totalJumps2.toLocaleString()}\n`;
+  if (maxKillSid) {
+    const nm = systems[maxKillSid]?.name||{};
+    report += `Most Dangerous:       ${nm.en} (${maxKillVal} kills)\n`;
+  }
+  if (maxJumpSid) {
+    const nm = systems[maxJumpSid]?.name||{};
+    report += `Most Active:          ${nm.en} (${maxJumpVal} jumps)\n`;
+  }
+
+  report += `\n── Infrastructure ──\n`;
+  report += `Systems with Stations: ${stationSystems.length}\n`;
+  report += `Total Agent Count:     ${agentCount}\n`;
+  stationSystems.sort((a,b) => b.count - a.count);
+  if (stationSystems.length > 0) {
+    report += `\nTop Station Systems:\n`;
+    for (const {sid:s, count:c} of stationSystems.slice(0, 10)) {
+      const nm=systems[s]?.name||{};
+      report += `  ${(nm.en||'?').padEnd(22)} ${c} stations\n`;
+    }
+  }
+
+  showReports('Overview', report);
+  setStatus('Overview done', 'green');
+}
+
+function fitToSet(ids) {
+  let x0=Infinity,x1=-Infinity,y0=Infinity,y1=-Infinity;
+  for (const sid of ids) {
+    const i=sysIdx(sid); if (i<0) continue;
+    if (sysX[i]<x0)x0=sysX[i]; if (sysX[i]>x1)x1=sysX[i];
+    if (sysY[i]<y0)y0=sysY[i]; if (sysY[i]>y1)y1=sysY[i];
+  }
+  view.cx=(x0+x1)/2; view.cy=(y0+y1)/2;
+  const dx=x1-x0||1, dy=y1-y0||1;
+  view.scale=Math.min(W/dx, H/dy)*0.85;
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Modal System
+// ═══════════════════════════════════════════════════════════════════════════
+let activeModal = null;
+
+function openModal(title, sizeClass) {
+  const root = document.getElementById('modal-root');
+  root.innerHTML = `
+    <div class="modal-overlay" onclick="if(event.target===this)closeModal()">
+      <div class="modal-dialog ${sizeClass||'medium'}">
+        <div class="modal-header">
+          <h3>${title}</h3>
+          <button class="modal-close" onclick="closeModal()">✕</button>
+        </div>
+        <div class="modal-filters" id="modal-filters"></div>
+        <div class="modal-body" id="modal-body"></div>
+        <div class="modal-footer" id="modal-footer"></div>
+      </div>
+    </div>`;
+  activeModal = root.querySelector('.modal-overlay');
+  return {
+    filters: document.getElementById('modal-filters'),
+    body: document.getElementById('modal-body'),
+    footer: document.getElementById('modal-footer'),
+  };
+}
+
+function closeModal() {
+  document.getElementById('modal-root').innerHTML = '';
+  activeModal = null;
+}
+
+// ── Shared: Faction → Corporation cascading dropdown helpers ──
+function _buildFactionOpts() {
+  const factionCorps = {};
+  for (const [cidStr, corp] of Object.entries(SDE.corpsById)) {
+    if (corp.factionID) {
+      if (!factionCorps[corp.factionID]) factionCorps[corp.factionID] = [];
+      factionCorps[corp.factionID].push(+cidStr);
+    }
+  }
+  return Object.entries(factionCorps).map(([fid]) => {
+    const f = SDE.factionsById[fid];
+    return f ? `<option value="${fid}">${f.name}${f.nameZh ? ' (' + f.nameZh + ')' : ''}</option>` : '';
+  }).join('');
+}
+
+function _buildCorpOptsForFaction(factionId) {
+  let corps;
+  if (factionId) {
+    corps = Object.entries(SDE.corpsById)
+      .filter(([, c]) => c.factionID === +factionId)
+      .map(([id, c]) => ({ id: +id, name: c.name, nameZh: c.nameZh || '' }));
+  } else {
+    corps = Object.entries(SDE.corpsById)
+      .filter(([, c]) => c.factionID)
+      .map(([id, c]) => ({ id: +id, name: c.name, nameZh: c.nameZh || '' }));
+  }
+  return corps.sort((a, b) => a.name.localeCompare(b.name))
+    .map(c => `<option value="${c.id}">${c.name}${c.nameZh ? ' (' + c.nameZh + ')' : ''}</option>`)
+    .join('');
+}
+
+function _bindFactionCorpCascade(factionSelId, corpSelId) {
+  const fEl = document.getElementById(factionSelId);
+  const cEl = document.getElementById(corpSelId);
+  if (fEl && cEl) {
+    fEl.addEventListener('change', () => {
+      const opts = '<option value="">All Corporations</option>' + _buildCorpOptsForFaction(fEl.value);
+      cEl.innerHTML = opts;
+    });
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Intelligence — Agent Finder (dialog with full filters, matching desktop)
+// ═══════════════════════════════════════════════════════════════════════════
+function openAgentFinder() {
+  if (!SDE) { setStatus('SDE data not loaded yet', 'yellow'); return; }
+
+  const currentOrigin = document.getElementById('inp-origin').value.trim();
+  const m = openModal('🔍 Agent Finder', 'wide');
+
+  const factionOpts = _buildFactionOpts();
+  const corpOpts = '<option value="">All Corporations</option>' + _buildCorpOptsForFaction('');
+  const typeOpts = Object.entries(AGENT_TYPE_NAMES).filter(([k])=>k>=2).map(([k,v])=>`<option value="${k}">${v}</option>`).join('');
+  const divOpts = Object.entries(AGENT_DIVISION_NAMES).map(([k,v])=>`<option value="${k}">${v}</option>`).join('');
+
+  m.filters.innerHTML = `
+    <div class="mf-row">
+      <div><label>Origin System</label><input type="text" id="af-sys" value="${currentOrigin}" placeholder="e.g. Jita"></div>
+      <div><label>Max Jumps</label><input type="number" id="af-jumps" value="5" min="0" max="50" style="width:60px"></div>
+      <div><label>Sec Min</label><select id="af-sec-min"><option value="">Any</option><option>0.0</option><option>0.1</option><option>0.2</option><option>0.3</option><option>0.4</option><option>0.5</option><option>0.6</option><option>0.7</option><option>0.8</option><option>0.9</option><option>1.0</option></select></div>
+      <div><label>Sec Max</label><select id="af-sec-max"><option value="">Any</option><option>0.0</option><option>0.1</option><option>0.2</option><option>0.3</option><option>0.4</option><option>0.5</option><option>0.6</option><option>0.7</option><option>0.8</option><option>0.9</option><option>1.0</option></select></div>
+      <div><label>Level</label><select id="af-level"><option value="">All Levels</option><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option></select></div>
+      <div><label>Type</label><select id="af-type"><option value="">All Types</option>${typeOpts}</select></div>
+    </div>
+    <div class="mf-row">
+      <div><label>Division</label><select id="af-div"><option value="">All Divisions</option>${divOpts}</select></div>
+      <div><label>Faction</label><select id="af-faction"><option value="">All Factions</option>${factionOpts}</select></div>
+      <div style="flex:2"><label>Corporation</label><select id="af-corp">${corpOpts}</select></div>
+      <div style="flex:0;display:flex;align-items:flex-end;padding-bottom:2px"><label class="modal-check"><input type="checkbox" id="af-exclude-loc" checked> Exclude Locators</label></div>
+      <div style="flex:0;display:flex;align-items:flex-end"><button class="btn accent" id="af-search-btn">🔍 Search</button></div>
+    </div>`;
+  _bindFactionCorpCascade('af-faction', 'af-corp');
+
+  m.body.innerHTML = '<div class="split-top" id="af-results" style="overflow:auto"></div>';
+  m.footer.innerHTML = '<span class="modal-status" id="af-status">Enter system name and click Search</span><span class="modal-summary" id="af-summary"></span>';
+
+  document.getElementById('af-search-btn').onclick = doAgentSearch;
+  // Enter key triggers search
+  document.getElementById('af-sys').onkeydown = e => { if(e.key==='Enter') doAgentSearch(); };
+}
+
+function doAgentSearch() {
+  const sysName = document.getElementById('af-sys').value.trim();
+  if (!sysName) return;
+  const originId = resolveSystem(sysName);
+  if (!originId) {
+    document.getElementById('af-status').textContent = `System "${sysName}" not found`;
+    return;
+  }
+
+  const maxJumps = parseInt(document.getElementById('af-jumps').value) || 5;
+  const secMin = document.getElementById('af-sec-min').value;
+  const secMax = document.getElementById('af-sec-max').value;
+  const levelFilter = document.getElementById('af-level').value;
+  const typeFilter = document.getElementById('af-type').value;
+  const divFilter = document.getElementById('af-div').value;
+  const factionFilter = document.getElementById('af-faction').value;
+  const corpFilter = document.getElementById('af-corp').value ? +document.getElementById('af-corp').value : null;
+  const excludeLoc = document.getElementById('af-exclude-loc').checked;
+
+  document.getElementById('af-status').textContent = `BFS scanning ${maxJumps} jumps from ${sysName}...`;
+
+  // BFS
+  const sysDist = bfsRange(originId, maxJumps);
+
+  // Security filter
+  const secLo = secMin !== '' ? parseFloat(secMin) : null;
+  const secHi = secMax !== '' ? parseFloat(secMax) : null;
+
+  // Faction → allowed corp IDs
+  let allowedCorpIds = null;
+  if (factionFilter) {
+    allowedCorpIds = new Set(factionCorpsOf(+factionFilter));
+  }
+
+  // Collect agents
+  const results = [];
+  for (const [sid, dist] of sysDist) {
+    const rec = systems[sid]; if (!rec) continue;
+    const sec = rec.securityStatus || 0;
+    if (secLo !== null && sec < secLo) continue;
+    if (secHi !== null && sec > secHi) continue;
+
+    const stns = rec.stations || [];
+    for (const st of stns) {
+      const stnName = getStationName(st.id, st.typeID);
+      const agents = SDE.agentsByLocation[st.id] || [];
+      for (const a of agents) {
+        if (excludeLoc && a.isLocator) continue;
+        if (levelFilter && a.level !== +levelFilter) continue;
+        if (typeFilter && a.agentTypeID !== +typeFilter) continue;
+        if (divFilter && a.divisionID !== +divFilter) continue;
+        if (allowedCorpIds && !allowedCorpIds.has(a.corpID)) continue;
+        if (corpFilter && a.corpID !== corpFilter) continue;
+        const nm = rec.name || {};
+        results.push({
+          dist, sysName: nm.en || '?', sysId: sid, sec,
+          agentName: a.name, agentNameZh: a.nameZh || '',
+          level: a.level,
+          typeName: AGENT_TYPE_NAMES[a.agentTypeID] || `T${a.agentTypeID}`,
+          divName: AGENT_DIVISION_NAMES[a.divisionID] || `D${a.divisionID}`,
+          factionName: SDE.factionsById[SDE.corpsById[a.corpID]?.factionID]?.name || '',
+          corpName: SDE.corpsById[a.corpID]?.name || `Corp ${a.corpID}`,
+          stnId: st.id, stnName: stnName, isLocator: a.isLocator,
+        });
+      }
+    }
+  }
+
+  results.sort((a,b) => a.dist - b.dist || b.level - a.level);
+
+  document.getElementById('af-status').textContent = '';
+
+  const el = document.getElementById('af-results');
+  if (results.length === 0) {
+    el.innerHTML = '<div style="padding:20px;color:var(--text-dim);text-align:center">No agents found matching filters</div>';
+    document.getElementById('af-summary').textContent = '';
+    return;
+  }
+
+  const shown = results.slice(0, 500);
+  let html = `<table class="modal-table"><thead><tr>
+    <th class="col-num">#</th><th class="col-jumps">Jumps</th><th>System</th><th class="col-sec">Sec</th>
+    <th>Agent</th><th class="col-lvl">Lvl</th><th>Type</th><th>Division</th>
+    <th>Faction</th><th>Corporation</th><th>Station</th></tr></thead><tbody>`;
+  for (let i=0; i<shown.length; i++) {
+    const r = shown[i];
+    const secStr = r.sec >= 0 ? r.sec.toFixed(1) : r.sec.toFixed(2);
+    html += `<tr ondblclick="closeModal();jumpToSystem(${r.sysId})" title="Double-click to navigate">
+      <td class="col-num">${i+1}</td><td class="col-jumps">${r.dist}</td>
+      <td>${r.sysName}</td><td class="col-sec">${secStr}</td>
+      <td>${r.agentName}${r.isLocator?' 📍':''}</td>
+      <td class="col-lvl">${r.level}</td><td>${r.typeName}</td><td>${r.divName}</td>
+      <td>${r.factionName}</td><td>${r.corpName}</td><td>${r.stnName}</td></tr>`;
+  }
+  html += '</tbody></table>';
+  el.innerHTML = html;
+
+  // Summary
+  const byLevel = [0,0,0,0,0];
+  for (const r of results) { if(r.level>=1&&r.level<=5) byLevel[r.level-1]++; }
+  document.getElementById('af-summary').textContent =
+    `${results.length} agents across ${sysDist.size} systems — L1:${byLevel[0]} L2:${byLevel[1]} L3:${byLevel[2]} L4:${byLevel[3]} L5:${byLevel[4]}`;
+}
+
+function factionCorpsOf(fid) {
+  const corps = [];
+  for (const [cidStr, corp] of Object.entries(SDE.corpsById)) {
+    if (corp.factionID === fid) corps.push(+cidStr);
+  }
+  return corps;
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Intelligence — Nearest LP Store (dialog with corp selector, matching desktop)
+// ═══════════════════════════════════════════════════════════════════════════
+function openNearestLP() {
+  if (!SDE) { setStatus('SDE data not loaded yet', 'yellow'); return; }
+
+  const currentOrigin = document.getElementById('inp-origin').value.trim();
+  const m = openModal('🏪 Nearest LP Store', 'wide');
+
+  // Build station→system mapping
+  const stnToSys = {};
+  for (const [sysIdStr, rec] of Object.entries(systems)) {
+    for (const st of (rec.stations || [])) {
+      stnToSys[st.id] = +sysIdStr;
+    }
+  }
+  // Build LP station mapping: corp → {station → system}
+  const lpStationsByCorp = new Map();
+  for (const [locIdStr, agents] of Object.entries(SDE.agentsByLocation)) {
+    for (const a of agents) {
+      if (a.isLocator) continue;
+      const cid = a.corpID;
+      const locId = +locIdStr;
+      if (!cid || !locId) continue;
+      const sysId = stnToSys[locId];
+      if (sysId === undefined) continue;
+      if (!lpStationsByCorp.has(cid)) lpStationsByCorp.set(cid, new Map());
+      lpStationsByCorp.get(cid).set(locId, sysId);
+    }
+  }
+  // Only show corps that have LP stations
+  const lpCorpIds = new Set(lpStationsByCorp.keys());
+
+  const factionOpts = _buildFactionOpts();
+  // Build corp opts filtered to only LP-store corps
+  function buildLPCorpOpts(factionId) {
+    let corps = Object.entries(SDE.corpsById)
+      .filter(([id, c]) => lpCorpIds.has(+id) && (!factionId || c.factionID === +factionId))
+      .map(([id, c]) => ({ id: +id, name: c.name, nameZh: c.nameZh || '' }));
+    return corps.sort((a, b) => a.name.localeCompare(b.name))
+      .map(c => `<option value="${c.id}">${c.name}${c.nameZh ? ' (' + c.nameZh + ')' : ''}</option>`)
+      .join('');
+  }
+  const corpOpts = '<option value="">All Corporations</option>' + buildLPCorpOpts('');
+
+  m.filters.innerHTML = `
+    <div class="mf-row">
+      <div style="flex:1.5"><label>Origin System</label><input type="text" id="lp-sys" value="${currentOrigin}" placeholder="e.g. Jita" style="width:100%"></div>
+      <div style="flex:1.5"><label>Faction</label><select id="lp-faction" style="width:100%"><option value="">All Factions</option>${factionOpts}</select></div>
+      <div style="flex:2"><label>Corporation</label><select id="lp-corp" style="width:100%">${corpOpts}</select></div>
+      <div><label>Max Results</label><input type="number" id="lp-max" value="10" min="1" max="50" style="width:60px"></div>
+      <div style="display:flex;align-items:flex-end"><button class="btn accent" id="lp-search-btn">🔍 Search</button></div>
+    </div>`;
+
+  // Faction → Corp cascade (only LP-store corps)
+  const fEl = document.getElementById('lp-faction');
+  const cEl = document.getElementById('lp-corp');
+  fEl.addEventListener('change', () => {
+    cEl.innerHTML = '<option value="">All Corporations</option>' + buildLPCorpOpts(fEl.value);
+  });
+
+  m.body.innerHTML = '<div id="lp-results"></div>';
+  m.footer.innerHTML = '<span class="modal-status" id="lp-status">Enter system and select corporation</span><span class="modal-summary" id="lp-summary"></span><div style="margin-left:auto;display:flex;gap:6px"><button class="btn sm" id="lp-scan-btn" disabled>🗺️ Scan Route</button><button class="btn sm" id="lp-preview-btn" disabled>👁 Preview Path</button></div>';
+
+  let selectedResult = null;
+
+  document.getElementById('lp-search-btn').onclick = doLPSearch;
+  document.getElementById('lp-sys').onkeydown = e => { if(e.key==='Enter') doLPSearch(); };
+
+  document.getElementById('lp-scan-btn').onclick = () => {
+    if (!selectedResult) return;
+    document.getElementById('inp-dest').value = selectedResult.sysName;
+    closeModal();
+    doRouteScan();
+  };
+
+  document.getElementById('lp-preview-btn').onclick = () => {
+    if (!selectedResult) return;
+    jumpToSystem(selectedResult.sysId);
+  };
+
+  function doLPSearch() {
+    const sysName = document.getElementById('lp-sys').value.trim();
+    const factionId = document.getElementById('lp-faction').value;
+    const corpId = parseInt(document.getElementById('lp-corp').value);
+    const maxResults = parseInt(document.getElementById('lp-max').value) || 10;
+    if (!sysName) {
+      document.getElementById('lp-status').textContent = 'Please enter origin system';
+      return;
+    }
+    const originId = resolveSystem(sysName);
+    if (!originId) {
+      document.getElementById('lp-status').textContent = `System "${sysName}" not found`;
+      return;
+    }
+
+    document.getElementById('lp-status').textContent = 'Searching…';
+
+    // BFS from origin
+    const distMap = bfsRange(originId, 50);
+
+    // Determine which corps to search
+    let searchCorpIds;
+    if (corpId) {
+      searchCorpIds = [corpId];
+    } else if (factionId) {
+      searchCorpIds = [...lpCorpIds].filter(cid => SDE.corpsById[cid]?.factionID === +factionId);
+    } else {
+      searchCorpIds = [...lpCorpIds];
+    }
+
+    const results = [];
+    for (const cid of searchCorpIds) {
+      const stnMap = lpStationsByCorp.get(cid) || new Map();
+      for (const [stnId, sysId] of stnMap.entries()) {
+        const dist = distMap.get(sysId);
+        if (dist === undefined) continue;
+        const sysRec = systems[sysId];
+        const nm = sysRec?.name || {};
+        const stnName = getStationName(stnId, null);
+        const corp = SDE.corpsById[cid];
+        results.push({
+          dist, sysName: nm.en || '?', sysId,
+          sec: sysRec?.securityStatus || 0, stnId, stnName,
+          corpName: corp?.name || `Corp ${cid}`,
+          corpNameZh: corp?.nameZh || '',
+        });
+      }
+    }
+    results.sort((a,b) => a.dist - b.dist);
+
+    document.getElementById('lp-status').textContent = '';
+
+    const el = document.getElementById('lp-results');
+    if (results.length === 0) {
+      el.innerHTML = '<div style="padding:20px;color:var(--text-dim);text-align:center">No LP stores found within 50 jumps</div>';
+      document.getElementById('lp-summary').textContent = '';
+      return;
+    }
+
+    const shown = results.slice(0, maxResults);
+    const showCorp = !corpId; // show corp column when not filtering by single corp
+    let html = `<table class="modal-table"><thead><tr>
+      <th class="col-num">#</th><th class="col-jumps">Jumps</th><th>System</th>
+      <th class="col-sec">Sec</th>${showCorp ? '<th>Corporation</th>' : ''}<th>Station</th></tr></thead><tbody>`;
+    for (let i=0; i<shown.length; i++) {
+      const r = shown[i];
+      const secStr = r.sec >= 0 ? r.sec.toFixed(1) : r.sec.toFixed(2);
+      html += `<tr onclick="selectLPRow(this,${i})" ondblclick="closeModal();jumpToSystem(${r.sysId})" data-idx="${i}">
+        <td class="col-num">${i+1}</td><td class="col-jumps">${r.dist}</td>
+        <td>${r.sysName}</td><td class="col-sec">${secStr}</td>
+        ${showCorp ? `<td>${r.corpName}${r.corpNameZh ? ' ('+r.corpNameZh+')' : ''}</td>` : ''}
+        <td>${r.stnName}</td></tr>`;
+    }
+    html += '</tbody></table>';
+    el.innerHTML = html;
+
+    // Store results for selection
+    window._lpResults = shown;
+    selectedResult = null;
+    document.getElementById('lp-scan-btn').disabled = true;
+    document.getElementById('lp-preview-btn').disabled = true;
+    document.getElementById('lp-summary').textContent = `${results.length} LP stores found (showing ${shown.length})`;
+  }
+
+  window.selectLPRow = function(tr, idx) {
+    const rows = tr.parentElement.querySelectorAll('tr');
+    rows.forEach(r => r.classList.remove('selected'));
+    tr.classList.add('selected');
+    selectedResult = window._lpResults[idx];
+    document.getElementById('lp-scan-btn').disabled = false;
+    document.getElementById('lp-preview-btn').disabled = false;
+  };
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Intelligence — Mission Hub Discovery
+// ═══════════════════════════════════════════════════════════════════════════
+function openMissionHub() {
+  if (!SDE || !missionHubs) { setStatus('SDE data not loaded yet', 'yellow'); return; }
+
+  const m = openModal('🗺 Mission Hub Discovery', 'wide');
+
+  // Build region list from mission hubs
+  const regionSet = new Set();
+  for (const h of missionHubs) {
+    const rid = systems[h.sysId]?.regionID;
+    if (rid) regionSet.add(rid);
+  }
+  const regionOpts = [...regionSet].map(rid => {
+    // Get region name from first system in that region
+    for (const h of missionHubs) {
+      const rec = systems[h.sysId];
+      if (rec?.regionID === rid) {
+        return `<option value="${rid}">${rec.regionName?.en||rec.regionName||'?'}</option>`;
+      }
+    }
+    return '';
+  }).join('');
+
+  const typeOpts = Object.entries(AGENT_TYPE_NAMES).filter(([k])=>k>=2).map(([k,v])=>`<option value="${k}">${v}</option>`).join('');
+  const divOpts = Object.entries(AGENT_DIVISION_NAMES).map(([k,v])=>`<option value="${k}">${v}</option>`).join('');
+  const factionOpts = _buildFactionOpts();
+  const corpOpts = '<option value="">All Corporations</option>' + _buildCorpOptsForFaction('');
+
+  m.filters.innerHTML = `
+    <div class="mf-row">
+      <div style="flex:1"><label>Region</label><select id="mh-region"><option value="">All Regions</option>${regionOpts}</select></div>
+      <div><label>Min Level</label><select id="mh-min-level"><option>4</option><option>3</option><option>5</option></select></div>
+      <div><label>Agent Type</label><select id="mh-type"><option value="">All Mission Types</option>${typeOpts}</select></div>
+      <div style="flex:0;display:flex;align-items:flex-end;padding-bottom:2px"><label class="modal-check"><input type="checkbox" id="mh-exclude-loc" checked> Exclude Locators</label></div>
+    </div>
+    <div class="mf-row">
+      <div><label>Faction</label><select id="mh-faction"><option value="">All Factions</option>${factionOpts}</select></div>
+      <div style="flex:1.5"><label>Corporation</label><select id="mh-corp">${corpOpts}</select></div>
+      <div><label>Division</label><select id="mh-div"><option value="">All Divisions</option>${divOpts}</select></div>
+    </div>`;
+  _bindFactionCorpCascade('mh-faction', 'mh-corp');
+
+  m.body.innerHTML = '<div id="mh-results"></div>';
+  m.footer.innerHTML = '<span class="modal-summary" id="mh-summary"></span><span class="modal-status" id="mh-status"></span><div style="margin-left:auto;display:flex;gap:6px"><button class="btn accent" id="mh-search-btn">🔍 Search</button><button class="btn sm" onclick="closeModal()">Close</button></div>';
+
+  function renderHubs() {
+    const minLevel = parseInt(document.getElementById('mh-min-level').value);
+    const regionFilter = document.getElementById('mh-region').value;
+    const typeFilter = document.getElementById('mh-type').value;
+    const divFilter = document.getElementById('mh-div').value;
+    const factionFilter = document.getElementById('mh-faction').value;
+    const corpFilter = document.getElementById('mh-corp').value ? +document.getElementById('mh-corp').value : null;
+    const excludeLoc = document.getElementById('mh-exclude-loc').checked;
+
+    // Build allowed corp set from faction filter
+    let allowedCorpIds = null;
+    if (factionFilter) {
+      allowedCorpIds = new Set();
+      for (const [cidStr, corp] of Object.entries(SDE.corpsById)) {
+        if (corp.factionID === +factionFilter) allowedCorpIds.add(+cidStr);
+      }
+    }
+
+    let hubs = missionHubs.slice(0, 200);
+
+    // Apply region filter
+    if (regionFilter) {
+      hubs = hubs.filter(h => systems[h.sysId]?.regionID === +regionFilter);
+    }
+
+    // Apply min level filter
+    hubs = hubs.filter(h => h.byLevel[minLevel - 1] > 0);
+
+    // If agent-level filters are active, re-count agents per hub
+    if (typeFilter || divFilter || factionFilter || corpFilter || excludeLoc) {
+      hubs = hubs.map(h => {
+        const stns = systems[h.sysId]?.stations || [];
+        const divSet = new Set();
+        const facSet = new Set();
+        const corpCounts = {};
+        let count = 0;
+        for (const st of stns) {
+          const agents = SDE.agentsByLocation[st.id] || [];
+          for (const a of agents) {
+            if (excludeLoc && a.isLocator) continue;
+            if (typeFilter && a.agentTypeID !== +typeFilter) continue;
+            if (divFilter && a.divisionID !== +divFilter) continue;
+            if (allowedCorpIds && !allowedCorpIds.has(a.corpID)) continue;
+            const cn = SDE.corpsById[a.corpID]?.name || '';
+            if (corpFilter && a.corpID !== corpFilter) continue;
+            count++;
+            const dn = AGENT_DIVISION_NAMES[a.divisionID] || '';
+            if (dn) divSet.add(dn);
+            const fid = SDE.corpsById[a.corpID]?.factionID;
+            if (fid) {
+              const f = SDE.factionsById[fid];
+              if (f) facSet.add(f.name + (f.nameZh ? ' (' + f.nameZh + ')' : ''));
+            }
+            corpCounts[cn] = (corpCounts[cn] || 0) + 1;
+          }
+        }
+        return { ...h, _filteredAgents: count, _divs: divSet, _facs: facSet, _corpCounts: corpCounts };
+      }).filter(h => h._filteredAgents > 0);
+      hubs.sort((a,b) => b._filteredAgents - a._filteredAgents);
+    }
+
+    hubs = hubs.slice(0, 200);
+
+    const el = document.getElementById('mh-results');
+    let html = `<table class="modal-table"><thead><tr>
+      <th class="col-num">#</th><th>System</th><th class="col-sec">Security</th><th>Region</th>
+      <th class="col-num">L3</th><th class="col-num">L4</th><th class="col-num">L5</th>
+      <th class="col-num">Total</th><th>Divisions</th><th>Factions</th><th>Corps Detail</th></tr></thead><tbody>`;
+    for (let i=0; i<hubs.length; i++) {
+      const h = hubs[i];
+      const sysRec = systems[h.sysId];
+      const nm = sysRec?.name || {};
+      const sec = (sysRec?.securityStatus||0);
+      const secStr = sec.toFixed(2);
+      const rname = sysRec?.regionName?.en || sysRec?.regionName || '?';
+      const l3 = h.byLevel[2] || 0, l4 = h.byLevel[3] || 0, l5 = h.byLevel[4] || 0;
+      const total = h._filteredAgents !== undefined ? h._filteredAgents : h.agents;
+
+      // Compute divisions, factions, corps detail from SDE if not pre-computed
+      let divs, facs, corpsDetail;
+      if (h._divs) {
+        divs = [...h._divs].sort().join(', ');
+      } else {
+        const divSet = new Set();
+        const stns = sysRec?.stations || [];
+        for (const st of stns) {
+          for (const a of (SDE.agentsByLocation[st.id] || [])) {
+            const dn = AGENT_DIVISION_NAMES[a.divisionID];
+            if (dn) divSet.add(dn);
+          }
+        }
+        divs = [...divSet].sort().join(', ');
+      }
+      if (h._facs) {
+        facs = [...h._facs].sort().join(', ');
+      } else {
+        const facSet = new Set();
+        const stns = sysRec?.stations || [];
+        for (const st of stns) {
+          for (const a of (SDE.agentsByLocation[st.id] || [])) {
+            const fid = SDE.corpsById[a.corpID]?.factionID;
+            if (fid) {
+              const f = SDE.factionsById[fid];
+              if (f) facSet.add(f.name + (f.nameZh ? ' (' + f.nameZh + ')' : ''));
+            }
+          }
+        }
+        facs = [...facSet].sort().join(', ');
+      }
+      if (h._corpCounts) {
+        const parts = Object.entries(h._corpCounts).sort((a,b)=>b[1]-a[1]).slice(0,4).map(([cn,cnt]) => {
+          const short = cn.length > 20 ? cn.slice(0,17) + '...' : cn;
+          return `${short}(${cnt})`;
+        });
+        corpsDetail = parts.join('  ');
+      } else {
+        const corpCounts = {};
+        const stns = sysRec?.stations || [];
+        for (const st of stns) {
+          for (const a of (SDE.agentsByLocation[st.id] || [])) {
+            const cn = SDE.corpsById[a.corpID]?.name || '';
+            if (cn) corpCounts[cn] = (corpCounts[cn] || 0) + 1;
+          }
+        }
+        const parts = Object.entries(corpCounts).sort((a,b)=>b[1]-a[1]).slice(0,4).map(([cn,cnt]) => {
+          const short = cn.length > 20 ? cn.slice(0,17) + '...' : cn;
+          return `${short}(${cnt})`;
+        });
+        corpsDetail = parts.join('  ');
+      }
+
+      html += `<tr class="mh-row" onclick="toggleHubDetail(${i})" title="Click to expand agents detail">
+        <td class="col-num">${i+1}</td><td>${nm.en||'?'}</td><td class="col-sec">${secStr}</td>
+        <td>${rname}</td>
+        <td class="col-num">${l3}</td><td class="col-num">${l4}</td><td class="col-num">${l5}</td>
+        <td class="col-num">${total}</td>
+        <td style="font-size:10px">${divs}</td><td style="font-size:10px">${facs}</td><td style="font-size:10px">${corpsDetail}</td></tr>`;
+      // Expandable detail row (hidden by default)
+      html += `<tr class="mh-detail-row" id="mh-detail-${i}" style="display:none"><td colspan="11" style="padding:0">`;
+      html += `<div style="background:var(--bg-card);padding:8px 12px;border-left:3px solid var(--accent)">`;
+      // Station-level and agent-level detail
+      const stns = sysRec?.stations || [];
+      for (const st of stns) {
+        const stnAgents = SDE?.agentsByLocation?.[st.id] || [];
+        let filteredAgents = stnAgents;
+        if (excludeLoc) filteredAgents = filteredAgents.filter(a => !a.isLocator);
+        if (typeFilter) filteredAgents = filteredAgents.filter(a => a.agentTypeID === +typeFilter);
+        if (divFilter) filteredAgents = filteredAgents.filter(a => a.divisionID === +divFilter);
+        if (allowedCorpIds) filteredAgents = filteredAgents.filter(a => allowedCorpIds.has(a.corpID));
+        if (corpFilter) filteredAgents = filteredAgents.filter(a => a.corpID === corpFilter);
+        if (filteredAgents.length === 0) continue;
+        const stnName = getStationName(st.id, st.typeID);
+        const stnCorp = SDE?.corpsById[st.ownerID]?.name || '';
+        html += `<div style="margin:4px 0"><span style="font-size:11px;font-weight:600;color:var(--text-bright)">🏢 ${stnName}</span>`;
+        if (stnCorp) html += ` <span style="font-size:10px;color:var(--text-dim)">(${stnCorp})</span>`;
+        html += ` <span style="font-size:10px;color:var(--accent)">${filteredAgents.length} agents</span></div>`;
+        // Group agents by corp
+        const agentsByCorp = {};
+        for (const a of filteredAgents) {
+          const cn = SDE.corpsById[a.corpID]?.name || `Corp ${a.corpID}`;
+          if (!agentsByCorp[cn]) agentsByCorp[cn] = [];
+          agentsByCorp[cn].push(a);
+        }
+        for (const [cn, agents] of Object.entries(agentsByCorp).sort((a,b)=>b[1].length-a[1].length)) {
+          html += `<div style="margin-left:16px;font-size:10px;color:var(--text-dim)">`;
+          html += `<span style="color:var(--text)">${cn}</span> (${agents.length}): `;
+          html += agents.map(a => {
+            const divName = AGENT_DIVISION_NAMES[a.divisionID] || '';
+            return `${a.name} [L${a.level}${divName?'/'+divName:''}${a.isLocator?'📍':''}]`;
+          }).join(', ');
+          html += `</div>`;
+        }
+      }
+      html += `</div></td></tr>`;
+    }
+    html += '</tbody></table>';
+    el.innerHTML = html;
+
+    const totalSystems = hubs.length;
+    const topSys = hubs.length > 0 ? (systems[hubs[0].sysId]?.name?.en || '?') : '?';
+    const topAgents = hubs.length > 0 ? (hubs[0]._filteredAgents !== undefined ? hubs[0]._filteredAgents : hubs[0].agents) : 0;
+    document.getElementById('mh-summary').textContent = `Found ${totalSystems} systems with L${minLevel}+ mission agents. Top: ${topSys} (${topAgents} agents)`;
+    document.getElementById('mh-status').textContent = '';
+  }
+
+  document.getElementById('mh-search-btn').onclick = renderHubs;
+  renderHubs();
+}
+
+// Toggle mission hub detail row
+window.toggleHubDetail = function(idx) {
+  const row = document.getElementById('mh-detail-' + idx);
+  if (row) {
+    row.style.display = row.style.display === 'none' ? '' : 'none';
+  }
+};
+
+// ── Mission Query helpers ──
+function _sdeFactionName(fid) {
+  if (!fid || !SDE) return '';
+  const f = SDE.factionsById[fid];
+  if (!f) return String(fid);
+  return f.nameZh ? `${f.name} (${f.nameZh})` : (f.name || String(fid));
+}
+function _sdeCorpName(cid) {
+  if (!cid || !SDE) return '';
+  const c = SDE.corpsById[cid];
+  if (!c) return String(cid);
+  return c.nameZh ? `${c.name} (${c.nameZh})` : (c.name || String(cid));
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Intelligence — Mission Query (dialog with search + detail, matching desktop)
+// ═══════════════════════════════════════════════════════════════════════════
+function openMissionQuery() {
+  if (!SDE) { setStatus('SDE data not loaded yet', 'yellow'); return; }
+  if (!missionsData) { setStatus('Missions data not loaded yet', 'yellow'); return; }
+
+  const m = openModal('📋 Mission Query', 'wide');
+
+  m.filters.innerHTML = `
+    <div class="mf-row">
+      <div style="flex:2"><label>Mission Name</label><input type="text" id="mq-name" placeholder="e.g. blockade, worlds collide, 牌匾…" style="width:100%"></div>
+      <div style="display:flex;align-items:flex-end;gap:8px">
+        <label style="display:flex;align-items:center;gap:3px;cursor:pointer"><input type="radio" name="mq-lang" value="zh" checked> 中文</label>
+        <label style="display:flex;align-items:center;gap:3px;cursor:pointer"><input type="radio" name="mq-lang" value="en"> English</label>
+      </div>
+      <div style="display:flex;align-items:flex-end"><button class="btn accent" id="mq-search-btn">🔍 Search</button></div>
+    </div>`;
+
+  m.body.innerHTML = `
+    <div class="split-top" id="mq-list" style="overflow:auto"></div>
+    <div class="split-bottom" id="mq-detail" style="min-height:120px;white-space:pre-wrap;font-family:Consolas,monospace;font-size:11px;line-height:1.5;padding:8px">
+      选择一个任务查看详情</div>`;
+  m.footer.innerHTML = '<span class="modal-status" id="mq-status"></span><span class="modal-summary" id="mq-summary"></span>';
+
+  document.getElementById('mq-search-btn').onclick = doMissionSearch;
+  document.getElementById('mq-name').onkeydown = e => { if(e.key==='Enter') doMissionSearch(); };
+  document.getElementById('mq-name').focus();
+}
+
+function _mqGetLang() {
+  const r = document.querySelector('input[name="mq-lang"]:checked');
+  return r ? r.value : 'zh';
+}
+
+function _missionTypeLabel(m) {
+  if (m.killMission) return '🗡 Combat';
+  if (m.courierMission) return '📦 Courier';
+  if (m.epicArcMission) return '📜 Epic Arc';
+  return '❓ Other';
+}
+
+function doMissionSearch() {
+  const query = document.getElementById('mq-name').value.trim().toLowerCase();
+  const lang = _mqGetLang();
+  if (!query || !missionsData) return;
+
+  document.getElementById('mq-status').textContent = 'Searching…';
+
+  const nameIndex = missionsData.missionsByName[lang] || {};
+  const missionIds = [];
+
+  // Search by name index (substring match)
+  for (const [name, ids] of Object.entries(nameIndex)) {
+    if (name.includes(query)) {
+      for (const mid of ids) {
+        if (!missionIds.includes(mid)) missionIds.push(mid);
+      }
+    }
+  }
+
+  document.getElementById('mq-status').textContent = '';
+
+  const el = document.getElementById('mq-list');
+  if (missionIds.length === 0) {
+    el.innerHTML = '<div style="padding:20px;color:var(--text-dim);text-align:center">没有找到匹配的任务。试试: blockade, worlds collide, 牌匾, delivery 等。</div>';
+    document.getElementById('mq-summary').textContent = '';
+    document.getElementById('mq-detail').textContent = '';
+    return;
+  }
+
+  const missions = missionIds.map(id => missionsData.missionsById[id]).filter(Boolean);
+  missions.sort((a,b) => {
+    const na = (a.name[lang]||a.name.en||'').toLowerCase();
+    const nb = (b.name[lang]||b.name.en||'').toLowerCase();
+    return na.localeCompare(nb);
+  });
+
+  let html = '<table class="modal-table"><thead><tr><th class="col-num">#</th><th>ID</th><th>Name</th><th>Type</th><th>Faction</th><th>Corporation</th></tr></thead><tbody>';
+  const shown = missions.slice(0, 200);
+  for (let i=0; i<shown.length; i++) {
+    const m = shown[i];
+    const nm = m.name[lang] || m.name.en || '?';
+    const type = _missionTypeLabel(m);
+    const fac = m.factionID ? (_sdeFactionName(m.factionID)) : '';
+    const corp = m.corporationID ? (_sdeCorpName(m.corporationID)) : '';
+    html += `<tr onclick="showMissionDetail(${m.id})" data-mid="${m.id}" style="cursor:pointer">
+      <td class="col-num">${i+1}</td><td>${m.id}</td><td>${nm}</td>
+      <td style="white-space:nowrap">${type}</td><td>${fac}</td><td>${corp}</td></tr>`;
+  }
+  html += '</tbody></table>';
+  el.innerHTML = html;
+
+  const totalText = missions.length >= 200 ? ` (showing first 200)` : '';
+  document.getElementById('mq-summary').textContent = `Found ${missions.length} mission(s)${totalText}`;
+
+  // Show detail for first
+  if (shown.length > 0) showMissionDetail(shown[0].id);
+}
+
+// Dialogue key → friendly label mapping (matching desktop order)
+const _MQ_DLG_LABELS = {
+  'messages.mission.briefing':              '📝 Briefing',
+  'messages.mission.offered.agentsays':     '🗣 Agent (offered)',
+  'messages.mission.accept.charsays':       '💬 You (accept)',
+  'messages.mission.accepted.agentsays':    '🗣 Agent (accepted)',
+  'messages.mission.decline.charsays':      '💬 You (decline)',
+  'messages.mission.declined.agentsays':    '🗣 Agent (declined)',
+  'messages.mission.complete.charsays':     '💬 You (complete)',
+  'messages.mission.completed.agentsays':   '🗣 Agent (completed)',
+  'messages.mission.ask.charsays':          '💬 You (ask)',
+  'messages.mission.quit.charsays':         '💬 You (quit)',
+  'messages.mission.quitted.agentsays':     '🗣 Agent (quitted)',
+  'messages.mission.extrainfo.header':      'ℹ️ Extra Info Header',
+  'messages.mission.extrainfo.body':        'ℹ️ Extra Info',
+};
+
+const _MQ_DLG_ORDER = [
+  'messages.mission.briefing',
+  'messages.mission.offered.agentsays',
+  'messages.mission.accept.charsays',
+  'messages.mission.accepted.agentsays',
+  'messages.mission.decline.charsays',
+  'messages.mission.declined.agentsays',
+  'messages.mission.complete.charsays',
+  'messages.mission.completed.agentsays',
+  'messages.mission.ask.charsays',
+  'messages.mission.quit.charsays',
+  'messages.mission.quitted.agentsays',
+  'messages.mission.extrainfo.header',
+  'messages.mission.extrainfo.body',
+];
+
+function showMissionDetail(mid) {
+  const mission = missionsData.missionsById[mid];
+  if (!mission) return;
+  const lang = _mqGetLang();
+
+  // Highlight selected row
+  const rows = document.querySelectorAll('#mq-list tr[data-mid]');
+  rows.forEach(r => r.classList.remove('selected'));
+  const sel = document.querySelector(`#mq-list tr[data-mid="${mid}"]`);
+  if (sel) sel.classList.add('selected');
+
+  const lines = [];
+  const nm = mission.name[lang] || mission.name.en || '?';
+  lines.push(`═══ ${nm} ═══`);
+  lines.push(`Mission ID: ${mid}`);
+
+  // Type
+  const typeStr = mission.killMission ? '🗡 Combat' : mission.courierMission ? '📦 Courier' : mission.epicArcMission ? '📜 Epic Arc' : '❓ Other';
+  lines.push(`Type: ${typeStr}`);
+
+  // Faction & Corporation
+  if (mission.factionID) {
+    lines.push(`Faction: ${_sdeFactionName(mission.factionID)}`);
+  }
+  if (mission.corporationID) {
+    const cn = SDE.corpsById[mission.corporationID];
+    const cz = cn?.nameZh || '';
+    lines.push(`Corporation: ${cn?.name || mission.corporationID}${cz ? ' ('+cz+')' : ''}`);
+  }
+
+  // ── Objectives ──
+  lines.push('');
+  lines.push('─── Objectives ───');
+  const km = mission.killMission;
+  if (km) {
+    lines.push(`  🗡 Kill objective (dungeon ${km.dungeonID || '?'})`);
+  }
+  const cm = mission.courierMission;
+  if (cm) {
+    const qty = cm.objectiveQuantity || '?';
+    const tid = cm.objectiveTypeID;
+    const tname = tid ? (_getTypeName(tid)) : '?';
+    lines.push(`  📦 Courier: ${qty}x ${tname}`);
+  }
+
+  // ── Rewards ──
+  const mr = mission.missionRewards;
+  if (mr) {
+    lines.push('');
+    lines.push('─── Rewards ───');
+    const rew = mr.reward;
+    if (rew) {
+      const rtid = rew.rewardTypeID;
+      const rqty = rew.rewardQuantity || '?';
+      const rname = rtid ? (_getTypeName(rtid)) : '?';
+      lines.push(`  🎁 Reward: ${rqty}x ${rname}`);
+    }
+    const bon = mr.bonusReward;
+    if (bon) {
+      const btid = bon.rewardTypeID;
+      const bqty = bon.rewardQuantity || '?';
+      const bname = btid ? (_getTypeName(btid)) : '?';
+      const btime = mr.bonusTimeInterval;
+      const tstr = btime ? ` (within ${btime}s)` : '';
+      lines.push(`  ⏱ Bonus: ${bqty}x ${bname}${tstr}`);
+    }
+  }
+  if (mission.hasStandingRewards) {
+    lines.push('  📊 Standing rewards: Yes');
+  }
+
+  // ── Dialogues ──
+  const msgs = mission.messages || [];
+  if (msgs.length > 0) {
+    lines.push('');
+    lines.push('─── Dialogues ───');
+
+    // Build map from _key
+    const msgMap = {};
+    for (const msg of msgs) {
+      if (msg._key) msgMap[msg._key] = msg;
+    }
+
+    // Show in desktop-defined order
+    for (const mkey of _MQ_DLG_ORDER) {
+      const entry = msgMap[mkey];
+      if (!entry) continue;
+      const txt = entry[lang] || entry.en || '';
+      if (!txt) continue;
+      // Clean HTML tags
+      const clean = txt.replace(/<[^>]+>/g, '').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&').replace(/&nbsp;/g, ' ').trim();
+      if (!clean) continue;
+      const label = _MQ_DLG_LABELS[mkey] || mkey;
+      lines.push('');
+      lines.push(`  ${label}:`);
+      // Truncate very long text (matching desktop 500 char limit)
+      const truncated = clean.length > 500 ? clean.substring(0, 500) + '...' : clean;
+      for (const ln of truncated.split('\n')) {
+        const s = ln.trim();
+        if (s) lines.push(`    ${s}`);
+      }
+    }
+  }
+
+  document.getElementById('mq-detail').textContent = lines.join('\n');
+}
+
+// Helper: get type name from typesNames
+function _getTypeName(typeId) {
+  if (!typesNames) return `Type#${typeId}`;
+  const t = typesNames[typeId];
+  if (!t) return `Type#${typeId}`;
+  return t.zh ? `${t.en} (${t.zh})` : (t.en || `Type#${typeId}`);
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Intelligence — LP Store Finder (dialog with item search + LP offers, matching desktop)
+// ═══════════════════════════════════════════════════════════════════════════
+let lpOffersIndex = null;  // {typeId: [offer, ...]}
+let lpOffersCorpNames = null; // {corpId: name}
+let lpOffersLoaded = false;
+let lpOffersLoading = false;
+let lpOffersSavedAt = null;
+
+function openLPStoreFinder() {
+  if (!SDE) { setStatus('SDE data not loaded yet', 'yellow'); return; }
+
+  const m = openModal('🎖️ LP Store Finder — Item → Corporation Lookup', 'wide');
+
+  m.filters.innerHTML = `
+    <div class="mf-row">
+      <div style="flex:2"><label>🔍 Item Name</label><input type="text" id="lpf-name" placeholder="e.g. Navy Cap Booster 800, Imperial Navy Slicer, 帝国海军切割机" style="width:100%"></div>
+      <div style="display:flex;align-items:flex-end"><button class="btn accent" id="lpf-search-btn">Search</button></div>
+      <div style="display:flex;align-items:flex-end"><button class="btn" id="lpf-refresh-btn">🔄 Refresh</button></div>
+    </div>`;
+
+  m.body.innerHTML = `
+    <div class="split-top" id="lpf-results" style="overflow:auto"></div>
+    <div class="split-bottom" id="lpf-detail" style="min-height:100px;white-space:pre-wrap;font-family:Consolas,monospace;font-size:11px;line-height:1.5;padding:8px">
+      Search for an item to see LP offers</div>`;
+  m.footer.innerHTML = '<span class="modal-status" id="lpf-status"></span><span class="modal-summary" id="lpf-summary"></span>';
+
+  document.getElementById('lpf-search-btn').onclick = doLPFSearch;
+  document.getElementById('lpf-name').onkeydown = e => { if(e.key==='Enter') doLPFSearch(); };
+  document.getElementById('lpf-refresh-btn').onclick = doRefreshLPData;
+  document.getElementById('lpf-name').focus();
+
+  // Auto-load cache if not already loaded
+  if (lpOffersLoaded) {
+    document.getElementById('lpf-status').textContent = `LP data loaded (${Object.keys(lpOffersIndex).length} items from cache, saved: ${lpOffersSavedAt || '?'})`;
+  } else {
+    doLoadLPData();
+  }
+}
+
+async function doRefreshLPData() {
+  lpOffersLoaded = false;
+  lpOffersIndex = null;
+  lpOffersCorpNames = null;
+  await doLoadLPData();
+}
+
+async function doLoadLPData() {
+  if (lpOffersLoading) return;
+  if (lpOffersLoaded) {
+    document.getElementById('lpf-status').textContent = `Already loaded (${Object.keys(lpOffersIndex).length} items)`;
+    return;
+  }
+
+  lpOffersLoading = true;
+  document.getElementById('lpf-refresh-btn').disabled = true;
+  document.getElementById('lpf-status').textContent = 'Loading LP offers from local cache…';
+
+  try {
+    const resp = await fetch('/lp_offers_cache.json');
+    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+    const cache = await resp.json();
+
+    lpOffersCorpNames = cache.corp_names || {};
+    lpOffersIndex = cache.offers_by_type || {};
+    lpOffersLoaded = true;
+    lpOffersSavedAt = cache.saved_at || '?';
+
+    const totalOffers = Object.values(lpOffersIndex).reduce((s, arr) => s + arr.length, 0);
+    document.getElementById('lpf-status').textContent = `Loaded ${totalOffers.toLocaleString()} offers from cache (saved: ${cache.saved_at || '?'})`;
+    document.getElementById('lpf-summary').textContent = `${Object.keys(lpOffersIndex).length} unique items available`;
+  } catch (e) {
+    document.getElementById('lpf-status').textContent = `Error loading cache: ${e.message}`;
+  } finally {
+    lpOffersLoading = false;
+    document.getElementById('lpf-refresh-btn').disabled = false;
+  }
+}
+
+function resolveTypeName(tid) {
+  if (typesNames && typesNames[tid]) {
+    const nm = typesNames[tid];
+    return nm.zh ? `${nm.en} (${nm.zh})` : nm.en;
+  }
+  return `Type ${tid}`;
+}
+
+function doLPFSearch() {
+  const name = document.getElementById('lpf-name').value.trim().toLowerCase();
+  if (!name || name.length < 2) {
+    document.getElementById('lpf-status').textContent = 'Type at least 2 characters to search';
+    return;
+  }
+
+  if (!lpOffersLoaded) {
+    if (lpOffersLoading) {
+      document.getElementById('lpf-status').textContent = '🎖️ LP data is loading, please wait…';
+    } else {
+      document.getElementById('lpf-status').textContent = '🎖️ LP data not loaded — click [🔄 Refresh] to load';
+    }
+    return;
+  }
+
+  document.getElementById('lpf-status').textContent = 'Searching…';
+
+  // Search by type name using typesNames (bilingual)
+  const matchedTids = [];
+  for (const [tidStr, nm] of Object.entries(typesNames || {})) {
+    const en = (nm.en || '').toLowerCase();
+    const zh = (nm.zh || '').toLowerCase();
+    if ((en.includes(name) || zh.includes(name)) && lpOffersIndex[tidStr]) {
+      matchedTids.push(tidStr);
+    }
+    if (matchedTids.length >= 100) break;
+  }
+
+  if (matchedTids.length === 0) {
+    document.getElementById('lpf-results').innerHTML = '<div style="padding:20px;color:var(--text-dim);text-align:center">No LP offers found for items matching "' + name + '"</div>';
+    document.getElementById('lpf-status').textContent = '';
+    document.getElementById('lpf-summary').textContent = '';
+    return;
+  }
+
+  // Build results table
+  const rows = [];
+  for (const tid of matchedTids.slice(0, 50)) {
+    const offers = lpOffersIndex[tid];
+    const typeName = resolveTypeName(+tid);
+
+    for (const offer of offers) {
+      const corpId = offer._corp_id;
+      const corpName = lpOffersCorpNames?.[String(corpId)] || offer._corp_name || SDE.corpsById[corpId]?.name || `Corp ${corpId}`;
+      rows.push({
+        tid: +tid, typeName, corpId, corpName,
+        lpCost: offer.lp_cost || 0,
+        iskCost: offer.isk_cost || 0,
+        quantity: offer.quantity || 1,
+        requiredItems: offer.required_items || [],
+      });
+    }
+  }
+
+  rows.sort((a,b) => a.lpCost - b.lpCost);
+
+  const el = document.getElementById('lpf-results');
+  let html = `<table class="modal-table"><thead><tr>
+    <th>Item</th><th>Corporation</th><th style="text-align:right">LP Cost</th>
+    <th style="text-align:right">ISK Cost</th><th>Required Items</th>
+    <th class="col-num">Qty</th></tr></thead><tbody>`;
+  for (let i = 0; i < rows.length; i++) {
+    const r = rows[i];
+    const reqStr = r.requiredItems.length > 0
+      ? r.requiredItems.slice(0,3).map(ri => {
+          const rnm = resolveTypeName(ri.type_id);
+          return `${ri.quantity}x ${rnm}`;
+        }).join(', ')
+      : '-';
+    html += `<tr onclick="showLPFDetail(this, ${i})">
+      <td>${r.typeName}</td><td>${r.corpName}</td>
+      <td style="text-align:right">${r.lpCost.toLocaleString()}</td>
+      <td style="text-align:right">${formatISK(r.iskCost)}</td>
+      <td style="font-size:10px">${reqStr}</td>
+      <td class="col-num">${r.quantity}</td></tr>`;
+  }
+  html += '</tbody></table>';
+  el.innerHTML = html;
+
+  document.getElementById('lpf-status').textContent = '';
+  document.getElementById('lpf-summary').textContent = `${rows.length} offers across ${matchedTids.length} items`;
+
+  // Show detail for first row
+  if (rows.length > 0) {
+    window._lpfRows = rows;
+    showLPFDetailByIdx(0);
+  }
+}
+
+function showLPFDetail(tr, idx) {
+  showLPFDetailByIdx(idx);
+  const allRows = tr.parentElement.querySelectorAll('tr');
+  allRows.forEach(r => r.classList.remove('selected'));
+  tr.classList.add('selected');
+}
+
+function showLPFDetailByIdx(idx) {
+  const rows = window._lpfRows || [];
+  const r = rows[idx];
+  if (!r) return;
+
+  let detail = `═══ ${r.typeName} ═══\n`;
+  detail += `Corporation: ${r.corpName}\n`;
+  detail += `LP Cost:     ${r.lpCost.toLocaleString()}\n`;
+  detail += `ISK Cost:    ${formatISK(r.iskCost)}\n`;
+  detail += `Quantity:    ${r.quantity}\n`;
+
+  if (r.requiredItems.length > 0) {
+    detail += `\n── Required Items ──\n`;
+    for (const ri of r.requiredItems) {
+      const rnm = resolveTypeName(ri.type_id);
+      detail += `  ${ri.quantity.toLocaleString().padStart(8)} x ${rnm}\n`;
+    }
+  } else {
+    detail += `\n── Required Items ──\n`;
+    detail += `  None (LP + ISK only)\n`;
+  }
+
+  document.getElementById('lpf-detail').textContent = detail;
+}
+
+function formatISK(v) {
+  if (!v) return '-';
+  if (v >= 1e12) return (v/1e12).toFixed(2) + 'T';
+  if (v >= 1e9) return (v/1e9).toFixed(2) + 'B';
+  if (v >= 1e6) return (v/1e6).toFixed(2) + 'M';
+  if (v >= 1e3) return (v/1e3).toFixed(1) + 'K';
+  return v.toLocaleString();
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════════════════
+// Reports
+// ═══════════════════════════════════════════════════════════════════════════
+const reportTabs = {};
+let activeReport = null;
+
+function showReports(title, content) {
+  reportTabs[title] = content;
+  activeReport = title;
+  renderReportTabs();
+}
+
+function renderReportTabs() {
+  const wrap = document.getElementById('reports-area');
+  wrap.classList.add('open');
+  const header = document.getElementById('reports-header');
+  const closeBtn = header.querySelector('.close-reports');
+  header.innerHTML = '';
+  for (const t of Object.keys(reportTabs)) {
+    const tab = document.createElement('div');
+    tab.className = 'tab' + (t === activeReport ? ' active' : '');
+    tab.textContent = t;
+    tab.onclick = () => { activeReport = t; renderReportTabs(); };
+    header.appendChild(tab);
+  }
+  if (closeBtn) header.appendChild(closeBtn);
+  else {
+    const btn = document.createElement('button');
+    btn.className = 'close-reports';
+    btn.textContent = '✕';
+    btn.onclick = closeReports;
+    header.appendChild(btn);
+  }
+  document.getElementById('reports-content').textContent = reportTabs[activeReport] || '';
+}
+
+function closeReports() {
+  document.getElementById('reports-area').classList.remove('open');
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Utilities
+// ═══════════════════════════════════════════════════════════════════════════
+function copyToClipboard(text) {
+  navigator.clipboard.writeText(text).then(() => setStatus('Copied: ' + text, 'green'));
+}
+
+// Keyboard shortcuts
+document.addEventListener('keydown', e => {
+  if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT' || e.target.tagName === 'TEXTAREA') return;
+  if (e.key === 'r' || e.key === 'R') resetView();
+  if (e.key === 'f' || e.key === 'F') fitAll();
+  if (e.key === 'b' || e.key === 'B') toggleSidebar();
+  if (e.key === '/') { e.preventDefault(); document.getElementById('global-search').focus(); }
+  if (e.key === 'Escape') {
+    if (activeModal) closeModal();
+    else { closeDetail(); closeReports(); }
+  }
+});
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Start
+// ═══════════════════════════════════════════════════════════════════════════
+console.log('[Atlas] Script loaded, calling init()…');
+init().catch(e => console.error('[Atlas] Unhandled init error:', e));
+</script>
+</body>
+</html>
