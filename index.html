@@ -129,6 +129,23 @@ select{cursor:pointer}
 #load-status{position:fixed;bottom:6px;left:50%;transform:translateX(-50%);font-size:10px;color:var(--text-dim);z-index:9999;transition:opacity .5s ease;pointer-events:none}
 #load-status.done{opacity:0}
 
+/* ═══ Autocomplete ═══ */
+#autocomplete-box{
+  position:fixed;z-index:9998;min-width:200px;max-width:400px;
+  background:var(--bg-input);border:1px solid var(--border);
+  max-height:240px;overflow-y:auto;display:none;
+  box-shadow:0 4px 16px rgba(0,0,0,.6);
+}
+#autocomplete-box::-webkit-scrollbar{width:4px}
+#autocomplete-box::-webkit-scrollbar-thumb{background:#333}
+.ac-item{
+  padding:6px 10px;font-size:12px;color:var(--text);cursor:pointer;
+  display:flex;align-items:center;gap:8px;white-space:nowrap;
+}
+.ac-item:hover,.ac-item.active{background:var(--accent-glow);color:var(--text-bright)}
+.ac-item .ac-sec{font-size:10px;color:var(--text-dim);margin-left:auto}
+.ac-item .ac-match{color:var(--accent);font-weight:600}
+
 /* ═══ Donate ═══ */
 #donate-btn{
   position:absolute;top:10px;right:10px;z-index:5;
@@ -688,6 +705,7 @@ async function init() {
     _setLoadProgress(45, 'Rendering canvas...');
     initCanvas();
     fitAll();
+    initAutocomplete();
     _setLoadProgress(50, 'Star map ready');
     loadDataStatus();
     console.log('[Atlas] Init complete. Systems:', N, 'Edges:', edges.length);
@@ -1092,6 +1110,111 @@ function resolveSystem(nameOrId) {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
+// Autocomplete
+// ═══════════════════════════════════════════════════════════════════════════
+let _acBox = null, _acActive = -1, _acItems = [], _acInput = null;
+
+function _acEnsure() {
+  if (_acBox) return;
+  _acBox = document.createElement('div');
+  _acBox.id = 'autocomplete-box';
+  document.body.appendChild(_acBox);
+}
+
+function _acFilter(query) {
+  if (!query || !nameToId) return [];
+  const q = query.toLowerCase();
+  const prefix = [], sub = [];
+  const names = Object.keys(nameToId);
+  for (let i = 0; i < names.length && prefix.length < 8; i++) {
+    const n = names[i];
+    if (n.startsWith(q)) { const id = nameToId[n]; if (systems[id]) prefix.push({ name: systems[id].name || n, id, region: systems[id].regionName?.en || '' }); }
+  }
+  if (prefix.length < 8) {
+    for (let i = 0; i < names.length && prefix.length + sub.length < 8; i++) {
+      const n = names[i];
+      if (!n.startsWith(q) && n.includes(q)) { const id = nameToId[n]; if (systems[id]) sub.push({ name: systems[id].name || n, id, region: systems[id].regionName?.en || '' }); }
+    }
+  }
+  return [...prefix, ...sub].slice(0, 8);
+}
+
+function _acRender(input) {
+  _acEnsure();
+  const q = input.value.trim();
+  if (q.length < 2) { _acHide(); return; }
+  _acItems = _acFilter(q);
+  if (!_acItems.length) { _acHide(); return; }
+  _acActive = -1;
+  _acInput = input;
+  const rect = input.getBoundingClientRect();
+  _acBox.style.left = rect.left + 'px';
+  _acBox.style.top = rect.bottom + 'px';
+  _acBox.style.width = rect.width + 'px';
+  _acBox.innerHTML = _acItems.map((it, i) => {
+    const hl = _acHighlight(it.name, q);
+    return `<div class="ac-item" data-idx="${i}"><span>${hl}</span><span class="ac-sec">${it.region}</span></div>`;
+  }).join('');
+  _acBox.style.display = 'block';
+}
+
+function _acHighlight(name, q) {
+  const idx = name.toLowerCase().indexOf(q.toLowerCase());
+  if (idx < 0) return _acEsc(name);
+  return _acEsc(name.substring(0, idx)) + '<span class="ac-match">' + _acEsc(name.substring(idx, idx + q.length)) + '</span>' + _acEsc(name.substring(idx + q.length));
+}
+function _acEsc(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+function _acHide() {
+  if (_acBox) _acBox.style.display = 'none';
+  _acActive = -1; _acItems = []; _acInput = null;
+}
+
+function _acSelect(idx) {
+  if (idx < 0 || idx >= _acItems.length) return;
+  const it = _acItems[idx];
+  if (_acInput) { _acInput.value = it.name; }
+  _acHide();
+  jumpToSystem(it.id);
+}
+
+function _acNav(dir) {
+  if (!_acItems.length) return;
+  _acActive = (_acActive + dir + _acItems.length) % _acItems.length;
+  _acBox.querySelectorAll('.ac-item').forEach((el, i) => el.classList.toggle('active', i === _acActive));
+  const active = _acBox.querySelector('.ac-item.active');
+  if (active) active.scrollIntoView({ block: 'nearest' });
+}
+
+function _acKeydown(e) {
+  if (!_acBox || _acBox.style.display === 'none') return;
+  if (e.key === 'ArrowDown') { e.preventDefault(); _acNav(1); }
+  else if (e.key === 'ArrowUp') { e.preventDefault(); _acNav(-1); }
+  else if (e.key === 'Enter' && _acActive >= 0) { e.preventDefault(); _acSelect(_acActive); }
+  else if (e.key === 'Escape') { _acHide(); }
+}
+
+function _acClick(e) {
+  const item = e.target.closest('.ac-item');
+  if (!item) return;
+  _acSelect(+item.dataset.idx);
+}
+
+function initAutocomplete() {
+  const inputs = ['global-search', 'inp-origin', 'inp-dest'];
+  for (const id of inputs) {
+    const el = document.getElementById(id);
+    if (!el) continue;
+    el.addEventListener('input', () => _acRender(el));
+    el.addEventListener('focus', () => { if (el.value.trim().length >= 2) _acRender(el); });
+    el.addEventListener('keydown', _acKeydown);
+  }
+  document.addEventListener('click', e => { if (!_acBox || !_acBox.contains(e.target)) _acHide(); });
+  _acEnsure();
+  _acBox.addEventListener('click', _acClick);
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
 // Mouse / Touch
 // ═══════════════════════════════════════════════════════════════════════════
 let dragging=false, dragStart=null, dragMoved=false, pinchDist=0;
@@ -1477,6 +1600,7 @@ function loadDataStatus() {
 // Global Search
 // ═══════════════════════════════════════════════════════════════════════════
 function doGlobalSearch() {
+  _acHide();
   const q = document.getElementById('global-search').value.trim();
   if (!q) return;
   const sid = resolveSystem(q);
