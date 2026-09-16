@@ -116,6 +116,22 @@ select{cursor:pointer}
 #legend .item{display:flex;align-items:center;gap:5px;margin:1px 0}
 #legend .dot{width:6px;height:6px;border-radius:0;flex-shrink:0}
 
+/* ═══ Donate ═══ */
+#donate-btn{
+  position:absolute;top:8px;right:8px;z-index:5;
+  background:rgba(0,0,0,.85);border:1px solid var(--border);color:var(--text-dim);
+  font:10px Consolas,'Courier New',monospace;padding:3px 8px;cursor:pointer;
+  letter-spacing:1px;text-transform:uppercase;
+}
+#donate-btn:hover{color:var(--accent);border-color:var(--accent)}
+#donate-panel{
+  position:absolute;top:28px;right:8px;z-index:5;display:none;
+  background:rgba(0,0,0,.92);border:1px solid var(--border);
+  padding:10px 14px;max-width:260px;font-size:11px;line-height:1.5;
+  color:var(--text);
+}
+#donate-panel .d-char{color:var(--accent);font-weight:bold}
+
 /* ═══ Detail Overlay ═══ */
 #detail-overlay{
   position:absolute;top:0;right:0;width:360px;height:100%;
@@ -415,6 +431,8 @@ select{cursor:pointer}
       <canvas id="starmap"></canvas>
       <div id="tooltip"></div>
       <canvas id="minimap" width="180" height="120"></canvas>
+      <button id="donate-btn" onclick="toggleDonate()">donate</button>
+      <div id="donate-panel">If you enjoy this tool, please donate ISK in-game to <span class="d-char">IndentationError</span> with the note:<br><span class="d-char">for missioneers-atlas</span></div>
       <div id="legend">
         <div class="item"><span class="dot" style="background:var(--green)"></span> Highsec</div>
         <div class="item"><span class="dot" style="background:var(--yellow)"></span> Lowsec</div>
@@ -1209,6 +1227,11 @@ function showDetail(sid) {
 }
 
 function closeDetail() { document.getElementById('detail-overlay').classList.remove('open'); }
+
+function toggleDonate() {
+  const p = document.getElementById('donate-panel');
+  p.style.display = p.style.display === 'none' || !p.style.display ? 'block' : 'none';
+}
 
 function jumpToSystem(sid) {
   const i=sysIdx(sid);
