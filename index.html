@@ -1184,7 +1184,8 @@ function _acSelect(idx) {
   const it = _acItems[idx];
   if (_acInput) { _acInput.value = it.name; }
   _acHide();
-  jumpToSystem(it.id);
+  // Only jump on the map if input is NOT inside a modal
+  if (_acInput && !_acInput.closest('.modal-overlay')) jumpToSystem(it.id);
 }
 
 function _acNav(dir) {
@@ -1209,15 +1210,16 @@ function _acClick(e) {
   _acSelect(+item.dataset.idx);
 }
 
+function _acBind(el) {
+  if (!el || el._acBound) return;
+  el._acBound = true;
+  el.addEventListener('input', () => _acRender(el));
+  el.addEventListener('focus', () => { if (el.value.trim().length >= 2) _acRender(el); });
+  el.addEventListener('keydown', _acKeydown);
+}
+
 function initAutocomplete() {
-  const inputs = ['global-search', 'inp-origin', 'inp-dest'];
-  for (const id of inputs) {
-    const el = document.getElementById(id);
-    if (!el) continue;
-    el.addEventListener('input', () => _acRender(el));
-    el.addEventListener('focus', () => { if (el.value.trim().length >= 2) _acRender(el); });
-    el.addEventListener('keydown', _acKeydown);
-  }
+  ['global-search', 'inp-origin', 'inp-dest'].forEach(id => _acBind(document.getElementById(id)));
   document.addEventListener('click', e => { if (!_acBox || !_acBox.contains(e.target)) _acHide(); });
   _acEnsure();
   _acBox.addEventListener('click', _acClick);
@@ -1990,6 +1992,7 @@ function openModal(title, sizeClass) {
 function closeModal() {
   document.getElementById('modal-root').innerHTML = '';
   activeModal = null;
+  _acHide();
 }
 
 // ── Shared: Faction → Corporation cascading dropdown helpers ──
@@ -2072,6 +2075,7 @@ function openAgentFinder() {
   document.getElementById('af-search-btn').onclick = doAgentSearch;
   // Enter key triggers search
   document.getElementById('af-sys').onkeydown = e => { if(e.key==='Enter') doAgentSearch(); };
+  _acBind(document.getElementById('af-sys'));
 }
 
 function doAgentSearch() {
@@ -2254,6 +2258,7 @@ function openNearestLP() {
 
   document.getElementById('lp-search-btn').onclick = doLPSearch;
   document.getElementById('lp-sys').onkeydown = e => { if(e.key==='Enter') doLPSearch(); };
+  _acBind(document.getElementById('lp-sys'));
 
   document.getElementById('lp-scan-btn').onclick = () => {
     if (!selectedResult) return;
