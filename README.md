@@ -10,7 +10,7 @@ A comprehensive PvE mission planning tool for EVE Online, featuring:
 
 ## Live Site
 
-👉 **[Open Missioneers' Atlas](https://YOUR_USERNAME.github.io/missioneers-atlas/)**
+👉 **[Open Missioneers' Atlas](https://ycsqwan.github.io/missioneers-atlas/)**
 
 ## Tech Stack
 
