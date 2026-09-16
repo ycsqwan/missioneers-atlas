@@ -524,7 +524,7 @@ let filterRid = null;
 async function init() {
   setStatus('Loading systems_static.json…', 'yellow');
   try {
-    const resp = await fetch('/systems_static.json');
+    const resp = await fetch('./systems_static.json');
     if (!resp.ok) throw new Error('HTTP ' + resp.status);
     SYS_DATA = await resp.json();
     if (!SYS_DATA || !SYS_DATA.systems) throw new Error('Invalid data format');
@@ -553,13 +553,13 @@ async function init() {
 async function loadSDE() {
   try {
     const [sdeResp, hubResp, missionsResp, typesResp, agentTypesResp, divsResp, stnNamesResp] = await Promise.all([
-      fetch('/sde_data.json'),
-      fetch('/mission_hubs.json'),
-      fetch('/missions_data.json'),
-      fetch('/types_names.json'),
-      fetch('/agent_types.json'),
-      fetch('/agent_divisions.json'),
-      fetch('/station_names.json'),
+      fetch('./sde_data.json'),
+      fetch('./mission_hubs.json'),
+      fetch('./missions_data.json'),
+      fetch('./types_names.json'),
+      fetch('./agent_types.json'),
+      fetch('./agent_divisions.json'),
+      fetch('./station_names.json'),
     ]);
     if (sdeResp.ok) {
       SDE = await sdeResp.json();
@@ -2583,7 +2583,7 @@ async function doLoadLPData() {
   document.getElementById('lpf-status').textContent = 'Loading LP offers from local cache…';
 
   try {
-    const resp = await fetch('/lp_offers_cache.json');
+    const resp = await fetch('./lp_offers_cache.json');
     if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
     const cache = await resp.json();
 
