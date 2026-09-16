@@ -1,4 +1,4 @@
-# EVE Missioneers' Atlas v6.0
+# EVE Missioneers' Atlas
 
 A comprehensive PvE mission planning tool for EVE Online, featuring:
 
