@@ -865,7 +865,7 @@ function draw() {
   ctx.fillRect(0, 0, W, H);
   const cx=view.cx, cy=view.cy, sc=view.scale;
   const toSx = x => (x-cx)*sc+W/2;
-  const toSy = y => (y-cy)*sc+H/2;
+  const toSy = y => -(y-cy)*sc+H/2;
   const showHulls = document.getElementById('chk-hulls').checked;
   const showLabels = document.getElementById('chk-labels').checked;
   const showGates = document.getElementById('chk-gates').checked;
@@ -981,16 +981,16 @@ function drawMinimap() {
   const s = Math.min(mw/dx, mh/dy)*0.9;
   const ox=(mw-dx*s)/2, oy=(mh-dy*s)/2;
   for (let i=0;i<N;i++) {
-    const px=(sysX[i]-x0)*s+ox, py=(sysY[i]-y0)*s+oy;
+    const px=(sysX[i]-x0)*s+ox, py=mh-((sysY[i]-y0)*s+oy);
     const sec=sysSec[i];
     miniCtx.fillStyle = sec>=0.5?'#2ed573':sec>0?'#ffa502':'#ff4757';
     miniCtx.fillRect(px,py,1,1);
   }
   const vx0=(view.cx-W/2/view.scale-x0)*s+ox;
-  const vy0=(view.cy-H/2/view.scale-y0)*s+oy;
+  const vy0=mh-((view.cy+H/2/view.scale-y0)*s+oy);
   const vw=W/view.scale*s, vh=H/view.scale*s;
   miniCtx.strokeStyle='rgba(255,170,0,0.6)'; miniCtx.lineWidth=1;
-  miniCtx.strokeRect(vx0,vy0,vw,vh);
+  miniCtx.strokeRect(vx0,vy0-vh,vw,vh);
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -1022,7 +1022,7 @@ function resolveSystem(nameOrId) {
 let dragging=false, dragStart=null, dragMoved=false, pinchDist=0;
 
 function screenToWorld(sx,sy) {
-  return { x:(sx-W/2)/view.scale+view.cx, y:(sy-H/2)/view.scale+view.cy };
+  return { x:(sx-W/2)/view.scale+view.cx, y:-(sy-H/2)/view.scale+view.cy };
 }
 
 function findNearest(wx,wy) {
@@ -1050,7 +1050,7 @@ function onMouseMove(e) {
     const dx=e.clientX-dragStart.x, dy=e.clientY-dragStart.y;
     if (Math.abs(dx)>2||Math.abs(dy)>2) dragMoved=true;
     view.cx=dragStart.vcx-dx/view.scale;
-    view.cy=dragStart.vcy-dy/view.scale;
+    view.cy=dragStart.vcy+dy/view.scale;
     requestRedraw();
   }
   const w=screenToWorld(sx,sy);
@@ -1100,7 +1100,7 @@ function onWheel(e) {
   view.scale *= factor;
   view.scale = Math.max(1e-19, Math.min(1e-13, view.scale));
   view.cx = w.x-(sx-W/2)/view.scale;
-  view.cy = w.y-(sy-H/2)/view.scale;
+  view.cy = w.y+(sy-H/2)/view.scale;
   requestRedraw();
 }
 
@@ -1138,7 +1138,7 @@ function onTouchMove(e) {
     const dx=t.clientX-dragStart.x, dy=t.clientY-dragStart.y;
     if (Math.abs(dx)>2||Math.abs(dy)>2) dragMoved=true;
     view.cx=dragStart.vcx-dx/view.scale;
-    view.cy=dragStart.vcy-dy/view.scale;
+    view.cy=dragStart.vcy+dy/view.scale;
     requestRedraw();
   } else if (e.touches.length===2) {
     e.preventDefault();
