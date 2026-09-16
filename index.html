@@ -132,28 +132,21 @@ select{cursor:pointer}
 /* ═══ Autocomplete ═══ */
 #autocomplete-box{
   position:fixed;z-index:9998;min-width:200px;max-width:420px;
-  background:var(--bg-panel,#161a20);border:1px solid var(--border);
-  border-radius:8px;max-height:320px;overflow-y:auto;display:none;
-  box-shadow:0 8px 24px rgba(0,0,0,.7),0 0 0 1px rgba(255,255,255,.04);
-  animation:ac-fadein .12s ease-out;overflow-x:hidden;
+  background:var(--bg-input,#0a0a0a);border:1px solid var(--border);
+  border-radius:0;max-height:240px;overflow-y:auto;display:none;
+  box-shadow:0 4px 12px rgba(0,0,0,.5);
 }
-@keyframes ac-fadein{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:translateY(0)}}
 #autocomplete-box::-webkit-scrollbar{width:4px}
-#autocomplete-box::-webkit-scrollbar-thumb{background:#333;border-radius:2px}
-#autocomplete-box::-webkit-scrollbar-track{background:transparent}
+#autocomplete-box::-webkit-scrollbar-thumb{background:#333}
 .ac-item{
-  padding:8px 12px;font-size:13px;color:var(--text);cursor:pointer;
-  display:flex;align-items:center;gap:10px;white-space:nowrap;
-  border-bottom:1px solid rgba(255,255,255,.04);transition:background .08s;
-  line-height:1.35;
+  padding:5px 6px;font-size:11px;color:var(--text);cursor:pointer;
+  display:flex;align-items:center;gap:8px;white-space:nowrap;
+  line-height:1.4;
 }
-.ac-item:last-child{border-bottom:none}
-.ac-item:hover,.ac-item.active{background:var(--accent-glow,rgba(0,180,255,.1));color:var(--text-bright,#e0e8f0)}
-.ac-item.active{background:rgba(0,180,255,.15)}
-.ac-item .ac-icon{font-size:10px;opacity:.45;flex-shrink:0;width:14px;text-align:center}
+.ac-item:hover,.ac-item.active{background:var(--accent-glow,rgba(0,180,255,.12));color:var(--text-bright,#e0e8f0)}
 .ac-item .ac-name{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis}
-.ac-item .ac-sec{font-size:11px;color:var(--text-dim,#667);margin-left:auto;flex-shrink:0;max-width:140px;overflow:hidden;text-overflow:ellipsis;text-align:right}
-.ac-item .ac-match{color:var(--accent,#4cf);font-weight:700}
+.ac-item .ac-sec{font-size:10px;color:var(--text-dim,#667);margin-left:auto;flex-shrink:0;max-width:140px;overflow:hidden;text-overflow:ellipsis;text-align:right}
+.ac-item .ac-match{color:var(--accent,#4cf);font-weight:600}
 
 /* ═══ Donate ═══ */
 #donate-btn{
@@ -1162,7 +1155,7 @@ function _acRender(input) {
   _acBox.style.width = rect.width + 'px';
   _acBox.innerHTML = _acItems.map((it, i) => {
     const hl = _acHighlight(it.name, q);
-    return `<div class="ac-item" data-idx="${i}"><span class="ac-icon">◉</span><span class="ac-name">${hl}</span><span class="ac-sec">${it.region}</span></div>`;
+    return `<div class="ac-item" data-idx="${i}"><span class="ac-name">${hl}</span><span class="ac-sec">${it.region}</span></div>`;
   }).join('');
   _acBox.style.display = 'block';
 }
