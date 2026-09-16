@@ -7,6 +7,9 @@
 <!-- Google Analytics -->
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-GZ94CLPF8M"></script>
 <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments)}gtag('js',new Date());gtag('config','G-GZ94CLPF8M',{'client_storage':'none','cookie_expires':0});</script>
+<!-- Preload critical data -->
+<link rel="preload" href="./systems_static.json" as="fetch" crossorigin>
+<link rel="preload" href="./sde_data.json" as="fetch" crossorigin>
 <style>
 /* ═══ Reset & Base ═══ */
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -118,6 +121,13 @@ select{cursor:pointer}
 }
 #legend .item{display:flex;align-items:center;gap:5px;margin:1px 0}
 #legend .dot{width:6px;height:6px;border-radius:0;flex-shrink:0}
+
+/* ═══ Loading Progress ═══ */
+#load-bar{position:fixed;bottom:0;left:0;width:100%;height:3px;background:var(--bg-panel);z-index:9999;transition:opacity .5s ease}
+#load-bar.done{opacity:0;pointer-events:none}
+#load-bar .fill{height:100%;width:0;background:var(--accent);transition:width .3s ease}
+#load-status{position:fixed;bottom:6px;left:50%;transform:translateX(-50%);font-size:10px;color:var(--text-dim);z-index:9999;transition:opacity .5s ease;pointer-events:none}
+#load-status.done{opacity:0}
 
 /* ═══ Donate ═══ */
 #donate-btn{
@@ -651,26 +661,42 @@ let filterRid = null;
 // ═══════════════════════════════════════════════════════════════════════════
 // Init
 // ═══════════════════════════════════════════════════════════════════════════
+function _setLoadProgress(pct, text) {
+  const fill = document.getElementById('load-fill');
+  const status = document.getElementById('load-status');
+  if (fill) fill.style.width = pct + '%';
+  if (status && text) status.textContent = text;
+}
+function _hideLoadBar() {
+  setTimeout(() => {
+    document.getElementById('load-bar')?.classList.add('done');
+    document.getElementById('load-status')?.classList.add('done');
+  }, 400);
+}
+
 async function init() {
-  setStatus('Loading systems_static.json…', 'yellow');
+  _setLoadProgress(5, 'Loading star map data...');
   try {
     const resp = await fetch('./systems_static.json');
     if (!resp.ok) throw new Error('HTTP ' + resp.status);
     SYS_DATA = await resp.json();
     if (!SYS_DATA || !SYS_DATA.systems) throw new Error('Invalid data format');
+    _setLoadProgress(35, 'Processing star map...');
     processData();
     setStatus('Ready', 'green');
     populateRegionSelect();
+    _setLoadProgress(45, 'Rendering canvas...');
     initCanvas();
     fitAll();
+    _setLoadProgress(50, 'Star map ready');
     loadDataStatus();
     console.log('[Atlas] Init complete. Systems:', N, 'Edges:', edges.length);
 
-    // Load SDE data in background
     loadSDE();
   } catch (e) {
     console.error('[Atlas] Init failed:', e);
     setStatus('Failed: ' + e.message, 'red');
+    _setLoadProgress(100, 'Load failed');
     document.getElementById('canvas-wrap').innerHTML =
       '<div style="display:flex;align-items:center;justify-content:center;height:100%;flex-direction:column;gap:12px">' +
       '<div style="font-size:16px;font-weight:600;color:var(--red)">⚠</div>' +
@@ -680,52 +706,101 @@ async function init() {
   }
 }
 
+// Fetch with JSON parse, returns null on failure
+async function _fetchJSON(url) {
+  try {
+    const resp = await fetch(url);
+    if (!resp.ok) return null;
+    return await resp.json();
+  } catch { return null; }
+}
+
 async function loadSDE() {
   try {
-    const [sdeResp, hubResp, missionsResp, typesResp, agentTypesResp, divsResp, stnNamesResp] = await Promise.all([
-      fetch('./sde_data.json'),
-      fetch('./mission_hubs.json'),
-      fetch('./missions_data.json'),
-      fetch('./types_names.json'),
-      fetch('./agent_types.json'),
-      fetch('./agent_divisions.json'),
-      fetch('./station_names.json'),
-    ]);
-    if (sdeResp.ok) {
-      SDE = await sdeResp.json();
+    const _tasks = [
+      { key: 'sde',        url: './sde_data.json',        pct: 60 },
+      { key: 'hubs',       url: './mission_hubs.json',    pct: 68 },
+      { key: 'types',      url: './types_names.json',     pct: 76 },
+      { key: 'agentTypes', url: './agent_types.json',     pct: 82 },
+      { key: 'divs',       url: './agent_divisions.json', pct: 86 },
+      { key: 'stnNames',   url: './station_names.json',   pct: 90 },
+    ];
+
+    _setLoadProgress(55, 'Loading SDE data...');
+
+    const results = {};
+    await Promise.all(_tasks.map(async t => {
+      results[t.key] = await _fetchJSON(t.url);
+      _setLoadProgress(t.pct, 'Loaded ' + t.url.split('/').pop());
+    }));
+
+    if (results.sde) {
+      SDE = results.sde;
       console.log('[Atlas] SDE loaded:', SDE._meta);
       const el = document.getElementById('stat-agents');
       el.style.display = '';
       el.textContent = `Agents: ${SDE._meta.agentCount.toLocaleString()}`;
       loadDataStatus();
     }
-    if (hubResp.ok) {
-      missionHubs = await hubResp.json();
+    if (results.hubs) {
+      missionHubs = results.hubs;
       console.log('[Atlas] Mission hubs loaded:', missionHubs.length);
     }
-    if (missionsResp.ok) {
-      missionsData = await missionsResp.json();
-      console.log('[Atlas] Missions loaded:', missionsData._meta?.count);
-    }
-    if (typesResp.ok) {
-      typesNames = await typesResp.json();
+    if (results.types) {
+      typesNames = results.types;
       console.log('[Atlas] Types names loaded:', Object.keys(typesNames).length);
     }
-    if (agentTypesResp.ok) {
-      agentTypesNames = await agentTypesResp.json();
+    if (results.agentTypes) {
+      agentTypesNames = results.agentTypes;
       console.log('[Atlas] Agent types loaded:', Object.keys(agentTypesNames).length);
     }
-    if (divsResp.ok) {
-      agentDivisions = await divsResp.json();
+    if (results.divs) {
+      agentDivisions = results.divs;
       console.log('[Atlas] Agent divisions loaded:', Object.keys(agentDivisions).length);
     }
-    if (stnNamesResp?.ok) {
-      stationNames = await stnNamesResp.json();
+    if (results.stnNames) {
+      stationNames = results.stnNames;
       console.log('[Atlas] Station names loaded:', Object.keys(stationNames).length);
     }
+
+    _setLoadProgress(95, 'All data loaded');
+    _hideLoadBar();
   } catch (e) {
     console.warn('[Atlas] SDE load failed:', e);
+    _setLoadProgress(100, 'Partial load error');
+    _hideLoadBar();
   }
+}
+
+// ── Lazy loaders (load on first use) ──
+async function _ensureMissionsData() {
+  if (missionsData) return true;
+  _setLoadProgress(30, 'Loading missions data (12 MB)...');
+  const data = await _fetchJSON('./missions_data.json');
+  if (data) {
+    missionsData = data;
+    console.log('[Atlas] Missions loaded:', missionsData._meta?.count);
+    _hideLoadBar();
+    return true;
+  }
+  return false;
+}
+
+async function _ensureLPData() {
+  if (lpOffersLoaded) return true;
+  _setLoadProgress(30, 'Loading LP offers cache (7 MB)...');
+  try {
+    const resp = await fetch('./lp_offers_cache.json');
+    if (!resp.ok) return false;
+    const cache = await resp.json();
+    lpOffersCorpNames = cache.corp_names || {};
+    lpOffersIndex = cache.offers_by_type || {};
+    lpOffersLoaded = true;
+    lpOffersSavedAt = cache.saved_at || '?';
+    console.log('[Atlas] LP offers loaded:', Object.keys(lpOffersIndex).length, 'items');
+    _hideLoadBar();
+    return true;
+  } catch { return false; }
 }
 
 function processData() {
@@ -2416,7 +2491,17 @@ function _sdeCorpName(cid) {
 // ═══════════════════════════════════════════════════════════════════════════
 function openMissionQuery() {
   if (!SDE) { setStatus('SDE data not loaded yet', 'yellow'); return; }
-  if (!missionsData) { setStatus('Missions data not loaded yet', 'yellow'); return; }
+  if (!missionsData) {
+    // Lazy load: show loading modal, fetch data, then open
+    const m2 = openModal('Mission Query', 'medium');
+    m2.body.innerHTML = '<div style="padding:40px;text-align:center;color:var(--text-dim)">Loading missions data (12 MB)...</div>';
+    _ensureMissionsData().then(ok => {
+      closeModal();
+      if (ok) openMissionQuery();
+      else setStatus('Failed to load missions data', 'red');
+    });
+    return;
+  }
 
   const m = openModal('Mission Query', 'wide');
 
@@ -2716,6 +2801,7 @@ async function doLoadLPData() {
   lpOffersLoading = true;
   document.getElementById('lpf-refresh-btn').disabled = true;
   document.getElementById('lpf-status').textContent = 'Loading LP offers from local cache…';
+  _setLoadProgress(30, 'Loading LP offers cache (7 MB)...');
 
   try {
     const resp = await fetch('./lp_offers_cache.json');
@@ -2730,6 +2816,7 @@ async function doLoadLPData() {
     const totalOffers = Object.values(lpOffersIndex).reduce((s, arr) => s + arr.length, 0);
     document.getElementById('lpf-status').textContent = `Loaded ${totalOffers.toLocaleString()} offers from cache (saved: ${cache.saved_at || '?'})`;
     document.getElementById('lpf-summary').textContent = `${Object.keys(lpOffersIndex).length} unique items available`;
+    _hideLoadBar();
   } catch (e) {
     document.getElementById('lpf-status').textContent = `Error loading cache: ${e.message}`;
   } finally {
@@ -2944,6 +3031,15 @@ document.addEventListener('keydown', e => {
 console.log('[Atlas] Script loaded, calling init()…');
 setLang(curLang);
 init().catch(e => console.error('[Atlas] Unhandled init error:', e));
+
+// Service Worker registration
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('./sw.js').catch(() => {});
+}
 </script>
+
+<!-- Loading Progress Bar -->
+<div id="load-bar"><div class="fill" id="load-fill"></div></div>
+<div id="load-status">Initializing...</div>
 </body>
 </html>
