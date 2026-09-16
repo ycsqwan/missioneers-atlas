@@ -1130,12 +1130,12 @@ function _acFilter(query) {
   const names = Object.keys(nameToId);
   for (let i = 0; i < names.length && prefix.length < 8; i++) {
     const n = names[i];
-    if (n.startsWith(q)) { const id = nameToId[n]; if (systems[id]) prefix.push({ name: systems[id].name || n, id, region: systems[id].regionName?.en || '' }); }
+    if (n.startsWith(q)) { const id = nameToId[n]; if (systems[id]) { const nm = systems[id].name || {}; prefix.push({ name: nm.en || n, id, region: (systems[id].regionName || {}).en || '' }); } }
   }
   if (prefix.length < 8) {
     for (let i = 0; i < names.length && prefix.length + sub.length < 8; i++) {
       const n = names[i];
-      if (!n.startsWith(q) && n.includes(q)) { const id = nameToId[n]; if (systems[id]) sub.push({ name: systems[id].name || n, id, region: systems[id].regionName?.en || '' }); }
+      if (!n.startsWith(q) && n.includes(q)) { const id = nameToId[n]; if (systems[id]) { const nm = systems[id].name || {}; sub.push({ name: nm.en || n, id, region: (systems[id].regionName || {}).en || '' }); } }
     }
   }
   return [...prefix, ...sub].slice(0, 8);
@@ -3165,7 +3165,7 @@ init().catch(e => console.error('[Atlas] Unhandled init error:', e));
 
 // Service Worker registration
 if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('./sw.js').catch(() => {});
+  navigator.serviceWorker.register('./sw.js?v=2').catch(() => {});
 }
 </script>
 
