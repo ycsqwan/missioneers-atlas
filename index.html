@@ -331,11 +331,11 @@ select{cursor:pointer}
   <!-- ═══ Top Bar ═══ -->
   <div id="topbar">
     <button id="sidebar-toggle" onclick="toggleSidebar()" title="Toggle Sidebar (B)">☰</button>
-    <h1>🔭 The New Eden Missioneers' Atlas</h1>
+    <h1>The New Eden Missioneers' Atlas</h1>
     <span class="subtitle" data-i18n="subtitle">Route Topology · Full ESI · Web Edition</span>
     <div class="top-search">
       <input type="text" id="global-search" data-i18n-placeholder="searchPH" placeholder="Find system (Enter)…" onkeydown="if(event.key==='Enter')doGlobalSearch()">
-      <button class="btn" onclick="doGlobalSearch()">🔍</button>
+      <button class="btn" onclick="doGlobalSearch()">Search</button>
     </div>
   </div>
 
@@ -347,7 +347,7 @@ select{cursor:pointer}
         <!-- ── Route Planning ── -->
         <div class="panel open" id="panel-route">
           <div class="panel-header" onclick="togglePanel('panel-route')">
-            <span class="icon">🗺️</span> <span data-i18n="routePlan">Route Planning</span>
+            <span class="icon">◇</span> <span data-i18n="routePlan">Route Planning</span>
             <span class="arrow">▸</span>
           </div>
           <div class="panel-body">
@@ -358,12 +358,12 @@ select{cursor:pointer}
               <div><label class="field" data-i18n="destOpt">Destination (optional)</label><input type="text" id="inp-dest" data-i18n-placeholder="egAmarr" placeholder="e.g. Amarr"></div>
             </div>
             <div class="btn-row">
-              <button class="btn accent" onclick="doFullScan()" data-i18n="fullScan">⚡ Full Scan</button>
+              <button class="btn accent" onclick="doFullScan()" data-i18n="fullScan">Full Scan</button>
               <button class="btn" onclick="doQuickScan()" data-i18n="quickScan">Quick Scan</button>
             </div>
             <div class="btn-row">
-              <button class="btn accent" onclick="doRouteScan()" data-i18n="routeScan">🗺️ Route Scan</button>
-              <button class="btn" onclick="doOverview()" data-i18n="overview">📊 Overview</button>
+              <button class="btn accent" onclick="doRouteScan()" data-i18n="routeScan">Route Scan</button>
+              <button class="btn" onclick="doOverview()" data-i18n="overview">Overview</button>
             </div>
             <div class="progress-bar" id="scan-progress"><div class="fill" id="scan-progress-fill"></div></div>
             <div id="scan-status" style="font-size:11px;color:var(--text-dim);margin-top:6px"></div>
@@ -373,20 +373,20 @@ select{cursor:pointer}
         <!-- ── Intelligence ── -->
         <div class="panel open" id="panel-intel">
           <div class="panel-header" onclick="togglePanel('panel-intel')">
-            <span class="icon">🧠</span> <span data-i18n="intel">Intelligence</span>
+            <span class="icon">◈</span> <span data-i18n="intel">Intelligence</span>
             <span class="arrow">▸</span>
           </div>
           <div class="panel-body">
             <div class="btn-row" style="flex-wrap:wrap">
-              <button class="btn accent" style="flex:1;min-width:140px;margin-bottom:4px" onclick="openAgentFinder()" data-i18n="agentFinder">🔍 Agent Finder</button>
-              <button class="btn accent" style="flex:1;min-width:140px;margin-bottom:4px" onclick="openNearestLP()" data-i18n="nearestLP">🏪 Nearest LP Store</button>
+              <button class="btn accent" style="flex:1;min-width:140px;margin-bottom:4px" onclick="openAgentFinder()" data-i18n="agentFinder">Agent Finder</button>
+              <button class="btn accent" style="flex:1;min-width:140px;margin-bottom:4px" onclick="openNearestLP()" data-i18n="nearestLP">Nearest LP Store</button>
             </div>
             <div class="btn-row" style="flex-wrap:wrap">
-              <button class="btn accent" style="flex:1;min-width:140px;margin-bottom:4px" onclick="openMissionHub()" data-i18n="missionHub">🗺 Mission Hub</button>
-              <button class="btn accent" style="flex:1;min-width:140px;margin-bottom:4px" onclick="openMissionQuery()" data-i18n="missionQuery">📋 Mission Query</button>
+              <button class="btn accent" style="flex:1;min-width:140px;margin-bottom:4px" onclick="openMissionHub()" data-i18n="missionHub">Mission Hub</button>
+              <button class="btn accent" style="flex:1;min-width:140px;margin-bottom:4px" onclick="openMissionQuery()" data-i18n="missionQuery">Mission Query</button>
             </div>
             <div class="btn-row" style="flex-wrap:wrap">
-              <button class="btn accent" style="flex:1;min-width:140px;margin-bottom:4px" onclick="openLPStoreFinder()" data-i18n="lpStoreFinder">🎖️ LP Store Finder</button>
+              <button class="btn accent" style="flex:1;min-width:140px;margin-bottom:4px" onclick="openLPStoreFinder()" data-i18n="lpStoreFinder">LP Store Finder</button>
             </div>
           </div>
         </div>
@@ -394,7 +394,7 @@ select{cursor:pointer}
         <!-- ── Star Map Controls ── -->
         <div class="panel open" id="panel-mapctrl">
           <div class="panel-header" onclick="togglePanel('panel-mapctrl')">
-            <span class="icon">🌐</span> <span data-i18n="mapCtrl">Star Map Controls</span>
+            <span class="icon">◎</span> <span data-i18n="mapCtrl">Star Map Controls</span>
             <span class="arrow">▸</span>
           </div>
           <div class="panel-body">
@@ -425,7 +425,7 @@ select{cursor:pointer}
         <!-- ── Data Status ── -->
         <div class="panel" id="panel-data">
           <div class="panel-header" onclick="togglePanel('panel-data')">
-            <span class="icon">📊</span> <span data-i18n="dataStatus">Data Status</span>
+            <span class="icon">▦</span> <span data-i18n="dataStatus">Data Status</span>
             <span class="arrow">▸</span>
           </div>
           <div class="panel-body" id="data-status-body">
@@ -520,16 +520,16 @@ const I18N = {
     jumps: 'Jumps',
     destOpt: 'Destination (optional)',
     egAmarr: 'e.g. Amarr',
-    fullScan: '⚡ Full Scan',
+    fullScan: 'Full Scan',
     quickScan: 'Quick Scan',
-    routeScan: '🗺️ Route Scan',
-    overview: '📊 Overview',
+    routeScan: 'Route Scan',
+    overview: 'Overview',
     intel: 'Intelligence',
-    agentFinder: '🔍 Agent Finder',
-    nearestLP: '🏪 Nearest LP Store',
-    missionHub: '🗺 Mission Hub',
-    missionQuery: '📋 Mission Query',
-    lpStoreFinder: '🎖️ LP Store Finder',
+    agentFinder: 'Agent Finder',
+    nearestLP: 'Nearest LP Store',
+    missionHub: 'Mission Hub',
+    missionQuery: 'Mission Query',
+    lpStoreFinder: 'LP Store Finder',
     mapCtrl: 'Star Map Controls',
     regionFilter: 'Region Filter',
     allRegions: 'All Regions',
@@ -558,16 +558,16 @@ const I18N = {
     jumps: '跳数',
     destOpt: '目的地（可选）',
     egAmarr: '如 Amarr',
-    fullScan: '⚡ 全面扫描',
+    fullScan: '全面扫描',
     quickScan: '快速扫描',
-    routeScan: '🗺️ 路线扫描',
-    overview: '📊 全服概览',
+    routeScan: '路线扫描',
+    overview: '全服概览',
     intel: '情报工具',
-    agentFinder: '🔍 代理人查找',
-    nearestLP: '🏪 最近 LP 商店',
-    missionHub: '🗺 任务中心',
-    missionQuery: '📋 任务查询',
-    lpStoreFinder: '🎖️ LP 商店查找',
+    agentFinder: '代理人查找',
+    nearestLP: '最近 LP 商店',
+    missionHub: '任务中心',
+    missionQuery: '任务查询',
+    lpStoreFinder: 'LP 商店查找',
     mapCtrl: '星图控制',
     regionFilter: '区域筛选',
     allRegions: '全部区域',
@@ -673,7 +673,7 @@ async function init() {
     setStatus('Failed: ' + e.message, 'red');
     document.getElementById('canvas-wrap').innerHTML =
       '<div style="display:flex;align-items:center;justify-content:center;height:100%;flex-direction:column;gap:12px">' +
-      '<div style="font-size:48px">⚠️</div>' +
+      '<div style="font-size:16px;font-weight:600;color:var(--red)">⚠</div>' +
       '<div style="font-size:16px;color:var(--red)">Data Load Failed</div>' +
       '<div style="font-size:12px;color:var(--text-dim)">' + e.message + '</div>' +
       '<div style="font-size:12px;color:var(--text-dim)">Make sure systems_static.json exists in project root</div></div>';
@@ -1311,7 +1311,7 @@ function showDetail(sid) {
           const corpName = SDE?.corpsById[a.corpID]?.name || `Corp ${a.corpID}`;
           const divName = AGENT_DIVISION_NAMES[a.divisionID] || `Div ${a.divisionID}`;
           html += `<div class="agent-card">
-            <div class="agent-name">${a.name} <span class="agent-level l${a.level}">L${a.level}</span>${a.isLocator?' <span style="font-size:8px;color:var(--text-dim)">📍Locator</span>':''}</div>
+            <div class="agent-name">${a.name} <span class="agent-level l${a.level}">L${a.level}</span>${a.isLocator?' <span style="font-size:8px;color:var(--text-dim)">Locator</span>':''}</div>
             <div class="agent-detail">${corpName} · ${divName} · ${AGENT_TYPE_NAMES[a.agentTypeID]||'Unknown'}</div>
           </div>`;
         }
@@ -1331,8 +1331,8 @@ function showDetail(sid) {
   // ESI actions
   html += `<div class="sep"></div>
     <div class="btn-row">
-      <button class="btn accent" onclick="doEsiQuery(${sid})">⚡ ESI Query</button>
-      <button class="btn" onclick="copyToClipboard('${nm.en||''}')">📋 Copy Name</button>
+      <button class="btn accent" onclick="doEsiQuery(${sid})">ESI Query</button>
+      <button class="btn" onclick="copyToClipboard('${nm.en||''}')">Copy Name</button>
     </div>`;
   html += '</div>';
   document.getElementById('detail-body').innerHTML = html;
@@ -1833,7 +1833,7 @@ function openAgentFinder() {
   if (!SDE) { setStatus('SDE data not loaded yet', 'yellow'); return; }
 
   const currentOrigin = document.getElementById('inp-origin').value.trim();
-  const m = openModal('🔍 Agent Finder', 'wide');
+  const m = openModal('Agent Finder', 'wide');
 
   const factionOpts = _buildFactionOpts();
   const corpOpts = '<option value="">All Corporations</option>' + _buildCorpOptsForFaction('');
@@ -1854,7 +1854,7 @@ function openAgentFinder() {
       <div><label>Faction</label><select id="af-faction"><option value="">All Factions</option>${factionOpts}</select></div>
       <div style="flex:2"><label>Corporation</label><select id="af-corp">${corpOpts}</select></div>
       <div style="flex:0;display:flex;align-items:flex-end;padding-bottom:2px"><label class="modal-check"><input type="checkbox" id="af-exclude-loc" checked> Exclude Locators</label></div>
-      <div style="flex:0;display:flex;align-items:flex-end"><button class="btn accent" id="af-search-btn">🔍 Search</button></div>
+      <div style="flex:0;display:flex;align-items:flex-end"><button class="btn accent" id="af-search-btn">Search</button></div>
     </div>`;
   _bindFactionCorpCascade('af-faction', 'af-corp');
 
@@ -1956,7 +1956,7 @@ function doAgentSearch() {
     html += `<tr ondblclick="closeModal();jumpToSystem(${r.sysId})" title="Double-click to navigate">
       <td class="col-num">${i+1}</td><td class="col-jumps">${r.dist}</td>
       <td>${r.sysName}</td><td class="col-sec">${secStr}</td>
-      <td>${r.agentName}${r.isLocator?' 📍':''}</td>
+      <td>${r.agentName}${r.isLocator?' [L]':''}</td>
       <td class="col-lvl">${r.level}</td><td>${r.typeName}</td><td>${r.divName}</td>
       <td>${r.factionName}</td><td>${r.corpName}</td><td>${r.stnName}</td></tr>`;
   }
@@ -1985,7 +1985,7 @@ function openNearestLP() {
   if (!SDE) { setStatus('SDE data not loaded yet', 'yellow'); return; }
 
   const currentOrigin = document.getElementById('inp-origin').value.trim();
-  const m = openModal('🏪 Nearest LP Store', 'wide');
+  const m = openModal('Nearest LP Store', 'wide');
 
   // Build station→system mapping
   const stnToSys = {};
@@ -2029,7 +2029,7 @@ function openNearestLP() {
       <div style="flex:1.5"><label>Faction</label><select id="lp-faction" style="width:100%"><option value="">All Factions</option>${factionOpts}</select></div>
       <div style="flex:2"><label>Corporation</label><select id="lp-corp" style="width:100%">${corpOpts}</select></div>
       <div><label>Max Results</label><input type="number" id="lp-max" value="10" min="1" max="50" style="width:60px"></div>
-      <div style="display:flex;align-items:flex-end"><button class="btn accent" id="lp-search-btn">🔍 Search</button></div>
+      <div style="display:flex;align-items:flex-end"><button class="btn accent" id="lp-search-btn">Search</button></div>
     </div>`;
 
   // Faction → Corp cascade (only LP-store corps)
@@ -2040,7 +2040,7 @@ function openNearestLP() {
   });
 
   m.body.innerHTML = '<div id="lp-results"></div>';
-  m.footer.innerHTML = '<span class="modal-status" id="lp-status">Enter system and select corporation</span><span class="modal-summary" id="lp-summary"></span><div style="margin-left:auto;display:flex;gap:6px"><button class="btn sm" id="lp-scan-btn" disabled>🗺️ Scan Route</button><button class="btn sm" id="lp-preview-btn" disabled>👁 Preview Path</button></div>';
+  m.footer.innerHTML = '<span class="modal-status" id="lp-status">Enter system and select corporation</span><span class="modal-summary" id="lp-summary"></span><div style="margin-left:auto;display:flex;gap:6px"><button class="btn sm" id="lp-scan-btn" disabled>Scan Route</button><button class="btn sm" id="lp-preview-btn" disabled>Preview Path</button></div>';
 
   let selectedResult = null;
 
@@ -2159,7 +2159,7 @@ function openNearestLP() {
 function openMissionHub() {
   if (!SDE || !missionHubs) { setStatus('SDE data not loaded yet', 'yellow'); return; }
 
-  const m = openModal('🗺 Mission Hub Discovery', 'wide');
+  const m = openModal('Mission Hub Discovery', 'wide');
 
   // Build region list from mission hubs
   const regionSet = new Set();
@@ -2198,7 +2198,7 @@ function openMissionHub() {
   _bindFactionCorpCascade('mh-faction', 'mh-corp');
 
   m.body.innerHTML = '<div id="mh-results"></div>';
-  m.footer.innerHTML = '<span class="modal-summary" id="mh-summary"></span><span class="modal-status" id="mh-status"></span><div style="margin-left:auto;display:flex;gap:6px"><button class="btn accent" id="mh-search-btn">🔍 Search</button><button class="btn sm" onclick="closeModal()">Close</button></div>';
+  m.footer.innerHTML = '<span class="modal-summary" id="mh-summary"></span><span class="modal-status" id="mh-status"></span><div style="margin-left:auto;display:flex;gap:6px"><button class="btn accent" id="mh-search-btn">Search</button><button class="btn sm" onclick="closeModal()">Close</button></div>';
 
   function renderHubs() {
     const minLevel = parseInt(document.getElementById('mh-min-level').value);
@@ -2353,7 +2353,7 @@ function openMissionHub() {
         if (filteredAgents.length === 0) continue;
         const stnName = getStationName(st.id, st.typeID);
         const stnCorp = SDE?.corpsById[st.ownerID]?.name || '';
-        html += `<div style="margin:4px 0"><span style="font-size:11px;font-weight:600;color:var(--text-bright)">🏢 ${stnName}</span>`;
+        html += `<div style="margin:4px 0"><span style="font-size:11px;font-weight:600;color:var(--text-bright)">${stnName}</span>`;
         if (stnCorp) html += ` <span style="font-size:10px;color:var(--text-dim)">(${stnCorp})</span>`;
         html += ` <span style="font-size:10px;color:var(--accent)">${filteredAgents.length} agents</span></div>`;
         // Group agents by corp
@@ -2368,7 +2368,7 @@ function openMissionHub() {
           html += `<span style="color:var(--text)">${cn}</span> (${agents.length}): `;
           html += agents.map(a => {
             const divName = AGENT_DIVISION_NAMES[a.divisionID] || '';
-            return `${a.name} [L${a.level}${divName?'/'+divName:''}${a.isLocator?'📍':''}]`;
+            return `${a.name} [L${a.level}${divName?'/'+divName:''}${a.isLocator?' [L]':''}]`;
           }).join(', ');
           html += `</div>`;
         }
@@ -2418,7 +2418,7 @@ function openMissionQuery() {
   if (!SDE) { setStatus('SDE data not loaded yet', 'yellow'); return; }
   if (!missionsData) { setStatus('Missions data not loaded yet', 'yellow'); return; }
 
-  const m = openModal('📋 Mission Query', 'wide');
+  const m = openModal('Mission Query', 'wide');
 
   m.filters.innerHTML = `
     <div class="mf-row">
@@ -2427,7 +2427,7 @@ function openMissionQuery() {
         <label style="display:flex;align-items:center;gap:3px;cursor:pointer"><input type="radio" name="mq-lang" value="zh" checked> 中文</label>
         <label style="display:flex;align-items:center;gap:3px;cursor:pointer"><input type="radio" name="mq-lang" value="en"> English</label>
       </div>
-      <div style="display:flex;align-items:flex-end"><button class="btn accent" id="mq-search-btn">🔍 Search</button></div>
+      <div style="display:flex;align-items:flex-end"><button class="btn accent" id="mq-search-btn">Search</button></div>
     </div>`;
 
   m.body.innerHTML = `
@@ -2447,10 +2447,10 @@ function _mqGetLang() {
 }
 
 function _missionTypeLabel(m) {
-  if (m.killMission) return '🗡 Combat';
-  if (m.courierMission) return '📦 Courier';
-  if (m.epicArcMission) return '📜 Epic Arc';
-  return '❓ Other';
+  if (m.killMission) return 'Combat';
+  if (m.courierMission) return 'Courier';
+  if (m.epicArcMission) return 'Epic Arc';
+  return 'Other';
 }
 
 function doMissionSearch() {
@@ -2513,19 +2513,19 @@ function doMissionSearch() {
 
 // Dialogue key → friendly label mapping (matching desktop order)
 const _MQ_DLG_LABELS = {
-  'messages.mission.briefing':              '📝 Briefing',
-  'messages.mission.offered.agentsays':     '🗣 Agent (offered)',
-  'messages.mission.accept.charsays':       '💬 You (accept)',
-  'messages.mission.accepted.agentsays':    '🗣 Agent (accepted)',
-  'messages.mission.decline.charsays':      '💬 You (decline)',
-  'messages.mission.declined.agentsays':    '🗣 Agent (declined)',
-  'messages.mission.complete.charsays':     '💬 You (complete)',
-  'messages.mission.completed.agentsays':   '🗣 Agent (completed)',
-  'messages.mission.ask.charsays':          '💬 You (ask)',
-  'messages.mission.quit.charsays':         '💬 You (quit)',
-  'messages.mission.quitted.agentsays':     '🗣 Agent (quitted)',
-  'messages.mission.extrainfo.header':      'ℹ️ Extra Info Header',
-  'messages.mission.extrainfo.body':        'ℹ️ Extra Info',
+  'messages.mission.briefing':              'Briefing',
+  'messages.mission.offered.agentsays':     'Agent (offered)',
+  'messages.mission.accept.charsays':       'You (accept)',
+  'messages.mission.accepted.agentsays':    'Agent (accepted)',
+  'messages.mission.decline.charsays':      'You (decline)',
+  'messages.mission.declined.agentsays':    'Agent (declined)',
+  'messages.mission.complete.charsays':     'You (complete)',
+  'messages.mission.completed.agentsays':   'Agent (completed)',
+  'messages.mission.ask.charsays':          'You (ask)',
+  'messages.mission.quit.charsays':         'You (quit)',
+  'messages.mission.quitted.agentsays':     'Agent (quitted)',
+  'messages.mission.extrainfo.header':      'Extra Info Header',
+  'messages.mission.extrainfo.body':        'Extra Info',
 };
 
 const _MQ_DLG_ORDER = [
@@ -2561,7 +2561,7 @@ function showMissionDetail(mid) {
   lines.push(`Mission ID: ${mid}`);
 
   // Type
-  const typeStr = mission.killMission ? '🗡 Combat' : mission.courierMission ? '📦 Courier' : mission.epicArcMission ? '📜 Epic Arc' : '❓ Other';
+  const typeStr = mission.killMission ? 'Combat' : mission.courierMission ? 'Courier' : mission.epicArcMission ? 'Epic Arc' : 'Other';
   lines.push(`Type: ${typeStr}`);
 
   // Faction & Corporation
@@ -2579,14 +2579,14 @@ function showMissionDetail(mid) {
   lines.push('─── Objectives ───');
   const km = mission.killMission;
   if (km) {
-    lines.push(`  🗡 Kill objective (dungeon ${km.dungeonID || '?'})`);
+    lines.push(`  Kill objective (dungeon ${km.dungeonID || '?'})`);
   }
   const cm = mission.courierMission;
   if (cm) {
     const qty = cm.objectiveQuantity || '?';
     const tid = cm.objectiveTypeID;
     const tname = tid ? (_getTypeName(tid)) : '?';
-    lines.push(`  📦 Courier: ${qty}x ${tname}`);
+    lines.push(`  Courier: ${qty}x ${tname}`);
   }
 
   // ── Rewards ──
@@ -2599,7 +2599,7 @@ function showMissionDetail(mid) {
       const rtid = rew.rewardTypeID;
       const rqty = rew.rewardQuantity || '?';
       const rname = rtid ? (_getTypeName(rtid)) : '?';
-      lines.push(`  🎁 Reward: ${rqty}x ${rname}`);
+      lines.push(`  Reward: ${rqty}x ${rname}`);
     }
     const bon = mr.bonusReward;
     if (bon) {
@@ -2608,11 +2608,11 @@ function showMissionDetail(mid) {
       const bname = btid ? (_getTypeName(btid)) : '?';
       const btime = mr.bonusTimeInterval;
       const tstr = btime ? ` (within ${btime}s)` : '';
-      lines.push(`  ⏱ Bonus: ${bqty}x ${bname}${tstr}`);
+      lines.push(`  Bonus: ${bqty}x ${bname}${tstr}`);
     }
   }
   if (mission.hasStandingRewards) {
-    lines.push('  📊 Standing rewards: Yes');
+    lines.push('  Standing rewards: Yes');
   }
 
   // ── Dialogues ──
@@ -2671,13 +2671,13 @@ let lpOffersSavedAt = null;
 function openLPStoreFinder() {
   if (!SDE) { setStatus('SDE data not loaded yet', 'yellow'); return; }
 
-  const m = openModal('🎖️ LP Store Finder — Item → Corporation Lookup', 'wide');
+  const m = openModal('LP Store Finder — Item → Corporation Lookup', 'wide');
 
   m.filters.innerHTML = `
     <div class="mf-row">
-      <div style="flex:2"><label>🔍 Item Name</label><input type="text" id="lpf-name" placeholder="e.g. Navy Cap Booster 800, Imperial Navy Slicer, 帝国海军切割机" style="width:100%"></div>
+      <div style="flex:2"><label>Item Name</label><input type="text" id="lpf-name" placeholder="e.g. Navy Cap Booster 800, Imperial Navy Slicer, 帝国海军切割机" style="width:100%"></div>
       <div style="display:flex;align-items:flex-end"><button class="btn accent" id="lpf-search-btn">Search</button></div>
-      <div style="display:flex;align-items:flex-end"><button class="btn" id="lpf-refresh-btn">🔄 Refresh</button></div>
+      <div style="display:flex;align-items:flex-end"><button class="btn" id="lpf-refresh-btn">Refresh</button></div>
     </div>`;
 
   m.body.innerHTML = `
@@ -2755,9 +2755,9 @@ function doLPFSearch() {
 
   if (!lpOffersLoaded) {
     if (lpOffersLoading) {
-      document.getElementById('lpf-status').textContent = '🎖️ LP data is loading, please wait…';
+      document.getElementById('lpf-status').textContent = 'LP data is loading, please wait…';
     } else {
-      document.getElementById('lpf-status').textContent = '🎖️ LP data not loaded — click [🔄 Refresh] to load';
+      document.getElementById('lpf-status').textContent = 'LP data not loaded — click [Refresh] to load';
     }
     return;
   }
