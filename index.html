@@ -2625,6 +2625,45 @@ function _bindFactionCorpCascade(factionSelId, corpSelId) {
   }
 }
 
+// Build region→constellation cascade data from systems object
+function _buildRegionConstMap(dataSource) {
+  const rcMap = {}; // regionID → { name, consts: { constID → name } }
+  const iterate = (sysId) => {
+    const rec = systems[sysId]; if (!rec) return;
+    const rid = rec.regionID; if (!rid) return;
+    const cid = rec.constellationID; if (!cid) return;
+    if (!rcMap[rid]) rcMap[rid] = { name: (rec.regionName?.en || '?'), consts: {} };
+    if (!rcMap[rid].consts[cid]) rcMap[rid].consts[cid] = (rec.constellationName?.en || '?');
+  };
+  if (dataSource === 'hubs' && typeof missionHubs !== 'undefined' && missionHubs) {
+    for (const h of missionHubs) iterate(h.sysId);
+  } else {
+    for (const sid of Object.keys(systems)) iterate(+sid);
+  }
+  return rcMap;
+}
+
+function _buildRegionOptsFromMap(rcMap) {
+  return Object.entries(rcMap).sort((a,b) => a[1].name.localeCompare(b[1].name))
+    .map(([rid, v]) => `<option value="${rid}">${v.name}</option>`).join('');
+}
+
+function _buildConstOptsFromMap(rcMap, regionId) {
+  if (!regionId) return '';
+  const entry = rcMap[+regionId]; if (!entry) return '';
+  return Object.entries(entry.consts).sort((a,b) => a[1].localeCompare(b[1]))
+    .map(([cid, name]) => `<option value="${cid}">${name}</option>`).join('');
+}
+
+function _bindRegionConstCascade(regionSelId, constSelId, rcMap) {
+  const rEl = document.getElementById(regionSelId);
+  const cEl = document.getElementById(constSelId);
+  if (!rEl || !cEl) return;
+  rEl.addEventListener('change', () => {
+    cEl.innerHTML = '<option value="">All Constellations</option>' + _buildConstOptsFromMap(rcMap, rEl.value);
+  });
+}
+
 // ═══════════════════════════════════════════════════════════════════════════
 // Intelligence — Agent Finder (dialog with full filters, matching desktop)
 // ═══════════════════════════════════════════════════════════════════════════
@@ -2639,6 +2678,9 @@ function openAgentFinder() {
   const typeOpts = Object.entries(AGENT_TYPE_NAMES).filter(([k])=>k>=2).map(([k,v])=>`<option value="${k}">${v}</option>`).join('');
   const divOpts = Object.entries(AGENT_DIVISION_NAMES).map(([k,v])=>`<option value="${k}">${v}</option>`).join('');
 
+  const afRcMap = _buildRegionConstMap('all');
+  const afRegionOpts = _buildRegionOptsFromMap(afRcMap);
+
   m.filters.innerHTML = `
     <div class="mf-row">
       <div><label>Origin System</label><input type="text" id="af-sys" value="${currentOrigin}" placeholder="e.g. Jita"></div>
@@ -2649,13 +2691,18 @@ function openAgentFinder() {
       <div><label>Type</label><select id="af-type"><option value="">All Types</option>${typeOpts}</select></div>
     </div>
     <div class="mf-row">
+      <div><label>Region</label><select id="af-region"><option value="">All Regions</option>${afRegionOpts}</select></div>
+      <div><label>Constellation</label><select id="af-const"><option value="">All Constellations</option></select></div>
       <div><label>Division</label><select id="af-div"><option value="">All Divisions</option>${divOpts}</select></div>
       <div><label>Faction</label><select id="af-faction"><option value="">All Factions</option>${factionOpts}</select></div>
       <div style="flex:2"><label>Corporation</label><select id="af-corp">${corpOpts}</select></div>
+    </div>
+    <div class="mf-row">
       <div style="flex:0;display:flex;align-items:flex-end;padding-bottom:2px"><label class="modal-check"><input type="checkbox" id="af-exclude-loc" checked> Exclude Locators</label></div>
       <div style="flex:0;display:flex;align-items:flex-end"><button class="btn accent" id="af-search-btn">Search</button></div>
     </div>`;
   _bindFactionCorpCascade('af-faction', 'af-corp');
+  _bindRegionConstCascade('af-region', 'af-const', afRcMap);
 
   m.body.innerHTML = '<div class="split-top" id="af-results" style="overflow:auto"></div>';
   m.footer.innerHTML = '<span class="modal-status" id="af-status">Enter system name and click Search</span><span class="modal-summary" id="af-summary"></span>';
@@ -2684,6 +2731,8 @@ function doAgentSearch() {
   const factionFilter = document.getElementById('af-faction').value;
   const corpFilter = document.getElementById('af-corp').value ? +document.getElementById('af-corp').value : null;
   const excludeLoc = document.getElementById('af-exclude-loc').checked;
+  const regionFilter = document.getElementById('af-region').value;
+  const constFilter = document.getElementById('af-const').value;
 
   document.getElementById('af-status').textContent = `BFS scanning ${maxJumps} jumps from ${sysName}...`;
 
@@ -2707,6 +2756,8 @@ function doAgentSearch() {
     const sec = rec.securityStatus || 0;
     if (secLo !== null && sec < secLo) continue;
     if (secHi !== null && sec > secHi) continue;
+    if (regionFilter && rec.regionID !== +regionFilter) continue;
+    if (constFilter && rec.constellationID !== +constFilter) continue;
 
     const stns = rec.stations || [];
     for (const st of stns) {
@@ -2962,22 +3013,9 @@ function openMissionHub() {
 
   const m = openModal('Mission Hub Discovery', 'wide');
 
-  // Build region list from mission hubs
-  const regionSet = new Set();
-  for (const h of missionHubs) {
-    const rid = systems[h.sysId]?.regionID;
-    if (rid) regionSet.add(rid);
-  }
-  const regionOpts = [...regionSet].map(rid => {
-    // Get region name from first system in that region
-    for (const h of missionHubs) {
-      const rec = systems[h.sysId];
-      if (rec?.regionID === rid) {
-        return `<option value="${rid}">${rec.regionName?.en||rec.regionName||'?'}</option>`;
-      }
-    }
-    return '';
-  }).join('');
+  // Build region→constellation cascade from mission hubs
+  const mhRcMap = _buildRegionConstMap('hubs');
+  const regionOpts = _buildRegionOptsFromMap(mhRcMap);
 
   const typeOpts = Object.entries(AGENT_TYPE_NAMES).filter(([k])=>k>=2).map(([k,v])=>`<option value="${k}">${v}</option>`).join('');
   const divOpts = Object.entries(AGENT_DIVISION_NAMES).map(([k,v])=>`<option value="${k}">${v}</option>`).join('');
@@ -2987,6 +3025,7 @@ function openMissionHub() {
   m.filters.innerHTML = `
     <div class="mf-row">
       <div style="flex:1"><label>Region</label><select id="mh-region"><option value="">All Regions</option>${regionOpts}</select></div>
+      <div style="flex:1"><label>Constellation</label><select id="mh-const"><option value="">All Constellations</option></select></div>
       <div><label>Min Level</label><select id="mh-min-level"><option>4</option><option>3</option><option>5</option></select></div>
       <div><label>Agent Type</label><select id="mh-type"><option value="">All Mission Types</option>${typeOpts}</select></div>
       <div style="flex:0;display:flex;align-items:flex-end;padding-bottom:2px"><label class="modal-check"><input type="checkbox" id="mh-exclude-loc" checked> Exclude Locators</label></div>
@@ -2997,6 +3036,7 @@ function openMissionHub() {
       <div><label>Division</label><select id="mh-div"><option value="">All Divisions</option>${divOpts}</select></div>
     </div>`;
   _bindFactionCorpCascade('mh-faction', 'mh-corp');
+  _bindRegionConstCascade('mh-region', 'mh-const', mhRcMap);
 
   m.body.innerHTML = '<div id="mh-results"></div>';
   m.footer.innerHTML = '<span class="modal-summary" id="mh-summary"></span><span class="modal-status" id="mh-status"></span><div style="margin-left:auto;display:flex;gap:6px"><button class="btn accent" id="mh-search-btn">Search</button><button class="btn sm" onclick="closeModal()">Close</button></div>';
@@ -3004,6 +3044,7 @@ function openMissionHub() {
   function renderHubs() {
     const minLevel = parseInt(document.getElementById('mh-min-level').value);
     const regionFilter = document.getElementById('mh-region').value;
+    const constFilter = document.getElementById('mh-const').value;
     const typeFilter = document.getElementById('mh-type').value;
     const divFilter = document.getElementById('mh-div').value;
     const factionFilter = document.getElementById('mh-faction').value;
@@ -3024,6 +3065,11 @@ function openMissionHub() {
     // Apply region filter
     if (regionFilter) {
       hubs = hubs.filter(h => systems[h.sysId]?.regionID === +regionFilter);
+    }
+
+    // Apply constellation filter
+    if (constFilter) {
+      hubs = hubs.filter(h => systems[h.sysId]?.constellationID === +constFilter);
     }
 
     // Apply min level filter
@@ -3066,7 +3112,7 @@ function openMissionHub() {
 
     const el = document.getElementById('mh-results');
     let html = `<table class="modal-table"><thead><tr>
-      <th class="col-num">#</th><th>System</th><th class="col-sec">Security</th><th>Region</th>
+      <th class="col-num">#</th><th>System</th><th class="col-sec">Security</th><th>Region</th><th>Constellation</th>
       <th class="col-num">L3</th><th class="col-num">L4</th><th class="col-num">L5</th>
       <th class="col-num">Total</th><th>Divisions</th><th>Factions</th><th>Corps Detail</th></tr></thead><tbody>`;
     for (let i=0; i<hubs.length; i++) {
@@ -3076,6 +3122,7 @@ function openMissionHub() {
       const sec = (sysRec?.securityStatus||0);
       const secStr = sec.toFixed(2);
       const rname = sysRec?.regionName?.en || sysRec?.regionName || '?';
+      const cname = sysRec?.constellationName?.en || sysRec?.constellationName || '?';
       const l3 = h.byLevel[2] || 0, l4 = h.byLevel[3] || 0, l5 = h.byLevel[4] || 0;
       const total = h._filteredAgents !== undefined ? h._filteredAgents : h.agents;
 
@@ -3134,12 +3181,12 @@ function openMissionHub() {
 
       html += `<tr class="mh-row" onclick="toggleHubDetail(${i})" title="Click to expand agents detail">
         <td class="col-num">${i+1}</td><td>${nm.en||'?'}</td><td class="col-sec">${secStr}</td>
-        <td>${rname}</td>
+        <td>${rname}</td><td>${cname}</td>
         <td class="col-num">${l3}</td><td class="col-num">${l4}</td><td class="col-num">${l5}</td>
         <td class="col-num">${total}</td>
         <td style="font-size:10px">${divs}</td><td style="font-size:10px">${facs}</td><td style="font-size:10px">${corpsDetail}</td></tr>`;
       // Expandable detail row (hidden by default)
-      html += `<tr class="mh-detail-row" id="mh-detail-${i}" style="display:none"><td colspan="11" style="padding:0">`;
+      html += `<tr class="mh-detail-row" id="mh-detail-${i}" style="display:none"><td colspan="12" style="padding:0">`;
       html += `<div style="background:var(--bg-card);padding:8px 12px;border-left:3px solid var(--accent)">`;
       // Station-level and agent-level detail
       const stns = sysRec?.stations || [];
