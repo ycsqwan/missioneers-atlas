@@ -21,6 +21,13 @@
   --blue:#558; --border:#222;
   --sidebar-w:340px; --topbar-h:36px;
 }
+[data-theme="light"]{
+  --bg-deep:#f0f0f0; --bg-panel:#e8e8e8; --bg-card:#f5f5f5; --bg-input:#fff;
+  --accent:#8b6508; --accent-dim:#b8860b; --accent-glow:rgba(139,101,8,0.12);
+  --text:#444; --text-dim:#888; --text-bright:#111;
+  --green:#2a7a2a; --yellow:#8a6d00; --red:#b33; --null:#aaa;
+  --blue:#4466aa; --border:#ccc;
+}
 html,body{height:100%;overflow:hidden;font-family:Consolas,'Courier New','Liberation Mono',monospace;background:var(--bg-deep);color:var(--text);font-size:12px}
 
 /* ═══ Layout ═══ */
@@ -148,6 +155,17 @@ select{cursor:pointer}
 .ac-item .ac-sec{font-size:10px;color:var(--text-dim,#667);margin-left:auto;flex-shrink:0;max-width:140px;overflow:hidden;text-overflow:ellipsis;text-align:right}
 .ac-item .ac-match{color:var(--accent,#4cf);font-weight:600}
 
+/* ═══ Light Theme Overrides ═══ */
+[data-theme="light"] #tooltip{background:rgba(255,255,255,.95);border-color:#bbb;color:#222}
+[data-theme="light"] #minimap{background:rgba(255,255,255,.9);border-color:#bbb}
+[data-theme="light"] #legend{background:rgba(255,255,255,.9);border-color:#bbb}
+[data-theme="light"] #donate-btn,[data-theme="light"] #lang-btn,[data-theme="light"] #theme-btn{background:rgba(255,255,255,.9);border-color:#bbb}
+[data-theme="light"] #donate-panel{background:rgba(255,255,255,.95);border-color:#bbb}
+[data-theme="light"] .modal-overlay{background:rgba(255,255,255,.85)}
+[data-theme="light"] .modal-box{background:var(--bg-card);border-color:#bbb}
+[data-theme="light"] #starmap .dot-glow{opacity:.3}
+[data-theme="light"] .ac-item:hover,[data-theme="light"] .ac-item.active{background:var(--accent-glow)}
+
 /* ═══ Donate ═══ */
 #donate-btn{
   position:absolute;top:10px;right:10px;z-index:5;
@@ -163,6 +181,13 @@ select{cursor:pointer}
   letter-spacing:1px;text-transform:uppercase;
 }
 #lang-btn:hover{color:var(--accent);border-color:var(--accent)}
+#theme-btn{
+  position:absolute;top:10px;right:160px;z-index:5;
+  background:rgba(0,0,0,.88);border:1px solid var(--border);color:var(--text-dim);
+  font:13px Consolas,'Courier New',monospace;padding:6px 10px;cursor:pointer;
+  letter-spacing:1px;text-transform:uppercase;
+}
+#theme-btn:hover{color:var(--accent);border-color:var(--accent)}
 #donate-panel{
   position:absolute;top:42px;right:10px;z-index:5;display:none;
   background:rgba(0,0,0,.92);border:1px solid var(--border);
@@ -470,6 +495,7 @@ select{cursor:pointer}
       <canvas id="starmap"></canvas>
       <div id="tooltip"></div>
       <canvas id="minimap" width="180" height="120"></canvas>
+      <button id="theme-btn" onclick="toggleTheme()">◐</button>
       <button id="lang-btn" onclick="toggleLang()">中文</button>
       <button id="donate-btn" onclick="toggleDonate()">donate</button>
       <div id="donate-panel" data-i18n="donateMsg">If you enjoy this tool, please donate ISK in-game to <span class="d-char">IndentationError</span> with the note:<br><span class="d-char">for missioneers-atlas</span></div>
@@ -635,6 +661,23 @@ function setLang(lang) {
 }
 
 function toggleLang() { setLang(curLang === 'en' ? 'zh' : 'en'); }
+
+// ═══ Theme Toggle ═══
+function toggleTheme() {
+  const isLight = document.documentElement.getAttribute('data-theme') === 'light';
+  const next = isLight ? '' : 'light';
+  if (next) document.documentElement.setAttribute('data-theme', next);
+  else document.documentElement.removeAttribute('data-theme');
+  localStorage.setItem('atlas-theme', next);
+  document.getElementById('theme-btn').textContent = next ? '●' : '◐';
+  needsRedraw = true;
+}
+(function initTheme() {
+  const saved = localStorage.getItem('atlas-theme') || '';
+  if (saved) document.documentElement.setAttribute('data-theme', saved);
+  const btn = document.getElementById('theme-btn');
+  if (btn) btn.textContent = saved ? '●' : '◐';
+})();
 
 // ═══════════════════════════════════════════════════════════════════════════
 // Helpers
@@ -955,8 +998,10 @@ function renderLoop() {
   rafId = requestAnimationFrame(renderLoop);
 }
 
+function isLightTheme() { return document.documentElement.getAttribute('data-theme') === 'light'; }
+
 function draw() {
-  ctx.fillStyle = '#0a0a1e';
+  ctx.fillStyle = isLightTheme() ? '#e8e8ec' : '#0a0a1e';
   ctx.fillRect(0, 0, W, H);
   const cx=view.cx, cy=view.cy, sc=view.scale;
   const toSx = x => (x-cx)*sc+W/2;
@@ -969,10 +1014,11 @@ function draw() {
   // Region hulls
   if (showHulls) {
     ctx.lineWidth = 0.8;
+    const lt = isLightTheme();
     for (const [rid, hull] of Object.entries(regionHulls)) {
       if (filterRid !== null && +rid !== filterRid) continue;
-      ctx.strokeStyle = 'rgba(60,100,160,0.3)';
-      ctx.fillStyle = 'rgba(20,30,60,0.06)';
+      ctx.strokeStyle = lt ? 'rgba(100,120,160,0.35)' : 'rgba(60,100,160,0.3)';
+      ctx.fillStyle = lt ? 'rgba(140,160,200,0.08)' : 'rgba(20,30,60,0.06)';
       ctx.beginPath();
       for (let i = 0; i < hull.length; i++) {
         const sx = toSx(hull[i].x), sy = toSy(hull[i].y);
@@ -984,7 +1030,7 @@ function draw() {
 
   // Stargate edges
   if (showGates) {
-    ctx.strokeStyle = 'rgba(50,65,110,0.15)';
+    ctx.strokeStyle = isLightTheme() ? 'rgba(100,110,150,0.2)' : 'rgba(50,65,110,0.15)';
     ctx.lineWidth = 0.5;
     ctx.beginPath();
     for (const [src, dst] of edges) {
@@ -1024,7 +1070,7 @@ function draw() {
     ctx.fillStyle = `rgb(${cr},${cg},${cb})`;
     ctx.beginPath(); ctx.arc(sx,sy,r,0,Math.PI*2); ctx.fill();
     if (showNames && sc > 3e-16) {
-      ctx.fillStyle = 'rgba(180,200,230,0.7)';
+      ctx.fillStyle = isLightTheme() ? 'rgba(40,40,60,0.75)' : 'rgba(180,200,230,0.7)';
       ctx.font = '9px sans-serif';
       ctx.fillText(sysNames[i], sx+r+3, sy+3);
     }
@@ -1038,7 +1084,7 @@ function draw() {
       if (filterRid !== null && +rid !== filterRid) continue;
       const sx = toSx(pos.x), sy = toSy(pos.y);
       if (sx<-100||sx>W+100||sy<-100||sy>H+100) continue;
-      ctx.fillStyle = 'rgba(100,120,160,0.6)';
+      ctx.fillStyle = isLightTheme() ? 'rgba(60,70,100,0.6)' : 'rgba(100,120,160,0.6)';
       ctx.fillText(regions[rid] ? regions[rid].name : rid, sx, sy);
     }
     ctx.textAlign = 'left';
@@ -1065,7 +1111,7 @@ function draw() {
 
 function drawMinimap() {
   const mw=180, mh=120;
-  miniCtx.fillStyle = 'rgba(10,10,30,0.85)';
+  miniCtx.fillStyle = isLightTheme() ? 'rgba(220,220,230,0.9)' : 'rgba(10,10,30,0.85)';
   miniCtx.fillRect(0,0,mw,mh);
   let x0=Infinity,x1=-Infinity,y0=Infinity,y1=-Infinity;
   for (let i=0;i<N;i++) {
@@ -1084,7 +1130,7 @@ function drawMinimap() {
   const vx0=(view.cx-W/2/view.scale-x0)*s+ox;
   const vy0=mh-((view.cy+H/2/view.scale-y0)*s+oy);
   const vw=W/view.scale*s, vh=H/view.scale*s;
-  miniCtx.strokeStyle='rgba(255,170,0,0.6)'; miniCtx.lineWidth=1;
+  miniCtx.strokeStyle = isLightTheme() ? 'rgba(139,101,8,0.7)' : 'rgba(255,170,0,0.6)'; miniCtx.lineWidth=1;
   miniCtx.strokeRect(vx0,vy0-vh,vw,vh);
 }
 
