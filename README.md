@@ -2,15 +2,15 @@
 
 A comprehensive PvE mission planning tool for EVE Online, featuring:
 
-- 🔍 **Agent Finder** — Find NPC agents by faction, corporation, level and location
-- 🏪 **Nearest LP Store** — Locate the closest Loyalty Point store with faction-corp cascade filtering
-- 🗺 **Mission Hub Discovery** — Top 200 most agent-dense systems in New Eden
-- 📋 **Mission Query** — Browse 2,892 missions with full dialogue text in Chinese & English
-- 🎖 **LP Store Finder** — Search which NPC corp LP stores sell a specific item
+- **Agent Finder** — Find NPC agents by faction, corporation, level and location
+- **Nearest LP Store** — Locate the closest Loyalty Point store with faction-corp cascade filtering
+- **Mission Hub Discovery** — Top 200 most agent-dense systems in New Eden
+- **Mission Query** — Browse 2,892 missions with full dialogue text in Chinese & English
+- **LP Store Finder** — Search which NPC corp LP stores sell a specific item
 
 ## Live Site
 
-👉 **[Open Missioneers' Atlas](https://ycsqwan.github.io/missioneers-atlas/)**
+**[Open Missioneers' Atlas](https://ycsqwan.github.io/missioneers-atlas/)**
 
 ## Tech Stack
 
