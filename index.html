@@ -1554,6 +1554,27 @@ function closeDetail() { document.getElementById('detail-overlay').classList.rem
 // ═══ zKillboard 48h Stats ═══
 const _zkbCache = {};
 const _allianceNameCache = {};
+const _corpNameCache = {};
+
+async function _resolveCorpName(cid) {
+  if (!cid) return '';
+  if (_corpNameCache[cid]) return _corpNameCache[cid];
+  // Check SDE first
+  const sdeName = SDE?.corpsById[cid]?.name;
+  if (sdeName) { _corpNameCache[cid] = sdeName; return sdeName; }
+  try {
+    const resp = await fetch(`https://esi.evetech.net/latest/corporations/${cid}/?datasource=tranquility`, {
+      headers: { 'Accept': 'application/json' }
+    });
+    if (resp.ok) {
+      const d = await resp.json();
+      _corpNameCache[cid] = d.corporation_name || d.name || `Corp ${cid}`;
+      return _corpNameCache[cid];
+    }
+  } catch {}
+  _corpNameCache[cid] = `Corp ${cid}`;
+  return _corpNameCache[cid];
+}
 
 async function _resolveAllianceName(aid) {
   if (!aid) return '';
@@ -1637,8 +1658,10 @@ function renderZkbStats(el, sid, kills, fetchedAt) {
     html += `<div style="margin-top:4px"><span style="color:var(--accent);font-weight:600">Top Killing Corps:</span><span id="zkb-corp-alliance"></span></div>`;
     for (const [cidStr, cnt] of topCorps) {
       const cid = +cidStr;
-      const corpName = SDE?.corpsById[cid]?.name || `Corp ${cid}`;
-      html += `<div style="margin-left:8px;font-size:10px">${corpName} <span style="color:var(--red)">${cnt} kills</span> <span class="zkb-a-tag" data-cid="${cid}" style="color:var(--text-dim)"></span></div>`;
+      const sdeName = SDE?.corpsById[cid]?.name;
+      const corpLabel = sdeName || `Corp ${cid}`;
+      const cls = sdeName ? '' : ' class="zkb-c-name" data-cid="' + cid + '"';
+      html += `<div style="margin-left:8px;font-size:10px"><span${cls}>${corpLabel}</span> <span style="color:var(--red)">${cnt} kills</span> <span class="zkb-a-tag" data-cid="${cid}" style="color:var(--text-dim)"></span></div>`;
     }
   }
   if (topAlliances.length) {
@@ -1657,9 +1680,15 @@ function renderZkbStats(el, sid, kills, fetchedAt) {
       if (sp) sp.textContent = name;
     });
   }
-  // Async resolve corp → alliance mapping
+  // Async resolve corp names (for player corps not in SDE)
   for (const [cidStr] of topCorps) {
     const cid = +cidStr;
+    if (!SDE?.corpsById[cid]) {
+      _resolveCorpName(cid).then(name => {
+        const sp = el.querySelector(`.zkb-c-name[data-cid="${cid}"]`);
+        if (sp) sp.textContent = name;
+      });
+    }
     const aid = _findCorpAllianceInKills(cid, kills);
     if (aid) {
       _resolveAllianceName(aid).then(name => {
