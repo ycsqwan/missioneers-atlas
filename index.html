@@ -276,6 +276,16 @@ select{cursor:pointer}
 /* Separator */
 .sep{height:1px;background:var(--border);margin:6px 0}
 
+/* Activity analysis */
+.act-link{color:var(--accent);cursor:pointer;text-decoration:underline;text-decoration-style:dotted}
+.act-link:hover{color:var(--text-bright)}
+.act-table{width:100%;border-collapse:collapse;font-size:10px;margin-top:4px}
+.act-table th{padding:3px 4px;font-weight:normal;color:var(--text-dim);text-align:center;border-bottom:1px solid var(--border);font-size:9px}
+.act-table td{padding:3px 4px;text-align:center;border-bottom:1px solid rgba(255,255,255,0.03)}
+.act-table .act-label{font-weight:600;color:var(--text-bright);text-align:left;width:50px}
+.act-table .act-total{text-align:center;min-width:36px}
+[data-theme="light"] .act-table td{border-bottom-color:rgba(0,0,0,0.05)}
+
 /* Info text */
 .info-text{font-size:9px;color:var(--text-dim);margin-top:3px;line-height:1.4}
 
@@ -1584,6 +1594,15 @@ function showDetail(sid) {
     </div>
     <div id="zkb-stats" style="font-size:10px;color:var(--text-dim)">Loading…</div>`;
 
+  // Activity Analysis buttons
+  html += `<div class="sep"></div>
+    <div style="font-size:11px;font-weight:600;color:var(--accent);margin:6px 0">Activity Analysis</div>
+    <div class="btn-row">
+      <button class="btn" onclick="doActivityRecent(${sid})" title="Past 7 days via pastSeconds API">Activity (7d)</button>
+      <button class="btn" onclick="openActivityMonthPicker(${sid})" title="Historical month via year/month API">Activity (Monthly)</button>
+    </div>
+    <div id="zkb-activity" style="font-size:10px;color:var(--text-dim);margin-top:4px"></div>`;
+
   // ESI actions
   html += `<div class="sep"></div>
     <div class="btn-row">
@@ -1752,6 +1771,305 @@ function _findCorpAllianceInKills(corpId, kills) {
     }
   }
   return null;
+}
+
+// ═══ Activity Analysis (24h heatmap by corp/alliance) ═══
+const _activityCache = {};
+
+function _kbRawKills(km) {
+  const atts = km.attackers || km.killmail?.attackers || [];
+  const vic = km.victim || km.killmail?.victim || {};
+  const t = km.killmail_time || km.killmail?.killmail_time;
+  const isNpc = (atts.length === 1 && !!atts[0].faction_id);
+  return { atts, vic, t, isNpc };
+}
+
+function _activityAgg(kills) {
+  const hCorpKills = {}, hCorpLosses = {}, hAlliKills = {}, hAlliLosses = {};
+  const eCorp = {}, eAlli = {};
+  let totalShip = 0, totalNpc = 0, totalIsk = 0;
+
+  for (const km of kills) {
+    const { atts, vic, t, isNpc } = _kbRawKills(km);
+    const val = (km.zkb || km.zkb_raw || {}).totalValue || 0;
+    totalIsk += val;
+    if (isNpc) { totalNpc++; } else { totalShip++; }
+
+    const h = t ? new Date(t).getUTCHours() : -1;
+    if (h < 0) continue;
+
+    // Attacker aggregation
+    for (const att of atts) {
+      if (att.faction_id && !att.corporation_id) continue;
+      const cid = att.corporation_id;
+      const aid = att.alliance_id;
+      if (cid) {
+        if (!hCorpKills[cid]) hCorpKills[cid] = new Uint16Array(24);
+        hCorpKills[cid][h]++;
+        eCorp[cid] = (eCorp[cid] || 0) + 1;
+      }
+      if (aid) {
+        if (!hAlliKills[aid]) hAlliKills[aid] = new Uint16Array(24);
+        hAlliKills[aid][h]++;
+        eAlli[aid] = (eAlli[aid] || 0) + 1;
+      }
+    }
+
+    // Victim aggregation
+    const vcid = vic.corporation_id;
+    const vaid = vic.alliance_id;
+    if (vcid) {
+      if (!hCorpLosses[vcid]) hCorpLosses[vcid] = new Uint16Array(24);
+      hCorpLosses[vcid][h]++;
+      eCorp[vcid] = (eCorp[vcid] || 0) + 1;
+    }
+    if (vaid) {
+      if (!hAlliLosses[vaid]) hAlliLosses[vaid] = new Uint16Array(24);
+      hAlliLosses[vaid][h]++;
+      eAlli[vaid] = (eAlli[vaid] || 0) + 1;
+    }
+  }
+
+  function top5(entity, heatmap) {
+    return Object.entries(entity).sort((a, b) => b[1] - a[1]).slice(0, 5)
+      .map(([id, total]) => ({ id: +id, total, h: heatmap[+id] || new Uint16Array(24) }));
+  }
+
+  return {
+    topCorp: top5(eCorp, hCorpKills), topAlli: top5(eAlli, hAlliKills),
+    hCorpKills, hCorpLosses, hAlliKills, hAlliLosses,
+    totalShip, totalNpc, totalIsk, count: kills.length,
+  };
+}
+
+async function _fetchZkbRecentRaw(sid, days) {
+  const key = `recent_${sid}_${days}`;
+  if (_activityCache[key]) return _activityCache[key];
+  const el = document.getElementById('zkb-activity');
+  if (el) el.innerHTML = '<span style="color:var(--accent)">Fetching past ' + days + 'd data…</span>';
+  try {
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), 15000);
+    const resp = await fetch('https://zkillboard.com/api/systemID/' + sid + '/pastSeconds/' + (days * 86400) + '/', {
+      headers: { 'Accept': 'application/json', 'User-Agent': 'MissioneersAtlas/6.0' },
+      signal: ctrl.signal,
+    });
+    clearTimeout(timer);
+    if (!resp.ok) throw new Error('HTTP ' + resp.status);
+    const data = await resp.json();
+    _activityCache[key] = data;
+    return data;
+  } catch (e) {
+    if (el) el.innerHTML = '<span style="color:var(--red)">' + (e.name === 'AbortError' ? 'Timeout' : e.message) + '</span>';
+    return null;
+  }
+}
+
+async function _fetchZkbMonthRaw(sid, year, month) {
+  const key = `month_${sid}_${year}_${month}`;
+  if (_activityCache[key]) return _activityCache[key];
+  const el = document.getElementById('zkb-activity');
+  const label = year + '-' + String(month).padStart(2, '0');
+  if (el) el.innerHTML = '<span style="color:var(--accent)">Fetching ' + label + '… (page 1)</span>';
+  const all = [];
+  try {
+    for (let page = 1; page <= 100; page++) {
+      if (page > 1 && el) el.innerHTML = '<span style="color:var(--accent)">Fetching ' + label + '… (page ' + page + ', ' + all.length + ' kills)</span>';
+      const ctrl = new AbortController();
+      const timer = setTimeout(() => ctrl.abort(), 15000);
+      const resp = await fetch('https://zkillboard.com/api/systemID/' + sid + '/year/' + year + '/month/' + month + '/page/' + page + '/', {
+        headers: { 'Accept': 'application/json', 'User-Agent': 'MissioneersAtlas/6.0' },
+        signal: ctrl.signal,
+      });
+      clearTimeout(timer);
+      if (!resp.ok) throw new Error('HTTP ' + resp.status);
+      const data = await resp.json();
+      if (!data || data.length === 0) break;
+      all.push(...data);
+      if (data.length < 200) break;
+    }
+    _activityCache[key] = all;
+    return all;
+  } catch (e) {
+    if (all.length > 0) { _activityCache[key] = all; return all; }
+    if (el) el.innerHTML = '<span style="color:var(--red)">' + (e.name === 'AbortError' ? 'Timeout' : e.message) + '</span>';
+    return null;
+  }
+}
+
+function _showActivityResult(sid, agg, source) {
+  const el = document.getElementById('zkb-activity');
+  if (!el) return;
+  if (!agg || agg.count === 0) {
+    el.innerHTML = '<span style="color:var(--text-dim)">No killmails found.</span>';
+    return;
+  }
+  _activityAggStore = agg;
+  let html = '<div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:4px">';
+  html += '<span>Ship: <b style="color:var(--text-bright)">' + agg.totalShip + '</b></span>';
+  html += '<span>NPC: <b style="color:var(--text-bright)">' + agg.totalNpc + '</b></span>';
+  html += '<span>ISK: <b style="color:var(--yellow)">' + formatISK(agg.totalIsk) + '</b></span>';
+  html += '</div>';
+  if (agg.topCorp.length) {
+    html += '<div style="margin-top:3px"><span style="color:var(--accent);font-weight:600">Top 5 Kill Corps</span></div>';
+    for (const r of agg.topCorp) {
+      const sdeName = SDE?.corpsById[r.id]?.name;
+      html += '<div style="margin-left:8px;font-size:10px">';
+      html += '<span class="act-link" data-etype="corp" data-eid="' + r.id + '" data-hk="' + Array.from(agg.hCorpKills[r.id] || []).join(',') + '" data-hl="' + Array.from(agg.hCorpLosses[r.id] || []).join(',') + '">' + (sdeName || 'Corporation ' + r.id) + '</span>';
+      html += ' <span style="color:var(--green)">' + r.total + ' involved</span></div>';
+    }
+  }
+  if (agg.topAlli.length) {
+    html += '<div style="margin-top:5px"><span style="color:var(--accent);font-weight:600">Top 5 Kill Alliances</span></div>';
+    for (const r of agg.topAlli) {
+      html += '<div style="margin-left:8px;font-size:10px">';
+      html += '<span class="act-link" data-etype="alli" data-eid="' + r.id + '" data-hk="' + Array.from(agg.hAlliKills[r.id] || []).join(',') + '" data-hl="' + Array.from(agg.hAlliLosses[r.id] || []).join(',') + '">Alliance ' + r.id + '</span>';
+      html += ' <span style="color:var(--green)">' + r.total + ' involved</span></div>';
+    }
+  }
+  html += '<div style="margin-top:4px;color:var(--text-dim);font-size:9px">Source: ' + source + ' · ' + agg.count + ' killmails · Click entity for 24h breakdown</div>';
+  el.innerHTML = html;
+
+  // Async resolve names
+  for (const r of agg.topCorp) {
+    if (!SDE?.corpsById[r.id]) {
+      _resolveCorpName(r.id).then(name => {
+        const sp = el.querySelector('.act-link[data-eid="' + r.id + '"][data-etype="corp"]');
+        if (sp) sp.textContent = name;
+      });
+    }
+  }
+  for (const r of agg.topAlli) {
+    _resolveAllianceName(r.id).then(name => {
+      const sp = el.querySelector('.act-link[data-eid="' + r.id + '"][data-etype="alli"]');
+      if (sp) sp.textContent = name;
+    });
+  }
+
+  // Bind click → modal
+  el.querySelectorAll('.act-link').forEach(link => {
+    link.addEventListener('click', () => {
+      const etype = link.dataset.etype;
+      const eid = +link.dataset.eid;
+      const hk = link.dataset.hk.split(',').map(Number);
+      const hl = link.dataset.hl.split(',').map(Number);
+      const name = link.textContent;
+      _openActivityModal(name, etype, eid, hk, hl, source);
+    });
+  });
+}
+
+let _activityAggStore = null;
+
+async function doActivityRecent(sid) {
+  const days = 7;
+  const nm = systems[sid]?.name?.en || sid;
+  setStatus('Activity fetch: ' + nm + ' (' + days + 'd)…', 'yellow');
+  const kills = await _fetchZkbRecentRaw(sid, days);
+  if (!kills) { setStatus('Activity fetch failed', 'red'); return; }
+  const agg = _activityAgg(kills);
+  _showActivityResult(sid, agg, 'pastSeconds/' + (days * 86400) + ' (' + days + 'd)');
+  setStatus('Activity done: ' + kills.length + ' killmails', 'green');
+}
+
+function openActivityMonthPicker(sid) {
+  const m = document.openModal ? null : null; // just for scope
+  const modal = openModal('Select Month', 'narrow');
+  const now = new Date();
+  const curY = now.getUTCFullYear();
+  const curM = now.getUTCMonth() + 1;
+  let html = '<div style="padding:12px">';
+  html += '<label class="field">Year</label><select id="act-sel-year" style="margin-bottom:8px">';
+  for (let y = curY; y >= curY - 3; y--) html += '<option value="' + y + '"' + (y === curY ? ' selected' : '') + '>' + y + '</option>';
+  html += '</select>';
+  html += '<label class="field">Month</label><select id="act-sel-month">';
+  for (let mo = 1; mo <= 12; mo++) html += '<option value="' + mo + '"' + (mo === curM ? ' selected' : '') + '>' + mo + '</option>';
+  html += '</select>';
+  html += '<div class="btn-row" style="margin-top:10px"><button class="btn accent" id="act-month-go">Fetch</button></div>';
+  html += '<div class="info-text" style="margin-top:8px">Fetches all killmails for the selected month (paginated, max ~20,000). For high-activity systems, data may be partial.</div>';
+  html += '</div>';
+  modal.body.innerHTML = html;
+  document.getElementById('act-month-go').addEventListener('click', async () => {
+    const year = +document.getElementById('act-sel-year').value;
+    const month = +document.getElementById('act-sel-month').value;
+    closeModal();
+    const nm = systems[sid]?.name?.en || sid;
+    setStatus('Activity fetch: ' + nm + ' (' + year + '-' + month + ')…', 'yellow');
+    const kills = await _fetchZkbMonthRaw(sid, year, month);
+    if (!kills) { setStatus('Activity fetch failed', 'red'); return; }
+    const agg = _activityAgg(kills);
+    const label = year + '-' + String(month).padStart(2, '0');
+    _showActivityResult(sid, agg, 'year/' + year + '/month/' + month + ' (' + label + ')');
+    setStatus('Activity done: ' + kills.length + ' killmails', 'green');
+  });
+}
+
+function _openActivityModal(name, etype, eid, hk, hl, source) {
+  const modal = openModal('Activity: ' + name, 'wide');
+  const maxVal = Math.max(1, ...hk, ...hl);
+
+  // HTML header
+  let info = '<div style="padding:6px 0;font-size:10px;color:var(--text-dim)">';
+  info += etype === 'corp' ? 'Corporation ID: ' + eid : 'Alliance ID: ' + eid;
+  info += ' · Source: ' + source + ' · All times in UTC (EVE Time)</div>';
+  modal.body.innerHTML = info;
+
+  // Table
+  const tbl = document.createElement('table');
+  tbl.className = 'act-table';
+
+  // Header
+  const thead = document.createElement('thead');
+  let hrow = '<tr><th></th>';
+  for (let h = 0; h < 24; h++) hrow += '<th>' + String(h).padStart(2, '0') + '</th>';
+  hrow += '<th class="act-total">Total</th></tr>';
+  thead.innerHTML = hrow;
+  tbl.appendChild(thead);
+
+  // Body
+  const tbody = document.createElement('tbody');
+  const rows = [
+    { label: 'Kills', data: hk, cls: 'act-kills' },
+    { label: 'Losses', data: hl, cls: 'act-losses' },
+  ];
+  for (const row of rows) {
+    const tr = document.createElement('tr');
+    tr.innerHTML = '<td class="act-label">' + row.label + '</td>';
+    const total = row.data.reduce((s, v) => s + v, 0);
+    for (let h = 0; h < 24; h++) {
+      const v = row.data[h];
+      const td = document.createElement('td');
+      td.className = row.cls;
+      if (v > 0) {
+        const pct = Math.round((v / maxVal) * 100);
+        td.textContent = v;
+        td.style.background = 'rgba(184,134,11,' + (0.08 + pct * 0.008) + ')';
+        td.style.color = 'var(--text-bright)';
+        td.style.fontWeight = '600';
+      } else {
+        td.textContent = '·';
+      }
+      tr.appendChild(td);
+    }
+    const totTd = document.createElement('td');
+    totTd.className = 'act-total';
+    totTd.textContent = total;
+    totTd.style.fontWeight = 'bold';
+    totTd.style.color = 'var(--accent)';
+    tr.appendChild(totTd);
+    tbody.appendChild(tr);
+  }
+  tbl.appendChild(tbody);
+  modal.body.appendChild(tbl);
+
+  // Peak hour info
+  const peakHk = hk.indexOf(Math.max(...hk));
+  const peakHl = hl.indexOf(Math.max(...hl));
+  let peakInfo = '<div style="padding:8px 0;font-size:10px;color:var(--text-dim)">';
+  peakInfo += 'Peak kill hour: <b style="color:var(--green)">' + String(peakHk).padStart(2, '0') + ':00 UTC</b>';
+  peakInfo += ' · Peak loss hour: <b style="color:var(--red)">' + String(peakHl).padStart(2, '0') + ':00 UTC</b>';
+  peakInfo += '</div>';
+  modal.body.innerHTML += peakInfo;
 }
 
 function toggleDonate() {
