@@ -1612,7 +1612,7 @@ function renderZkbStats(el, sid, kills, fetchedAt) {
     const mail = km.killmail || {};
     const zkb = km.zkb || {};
     totalValue += zkb.totalValue || 0;
-    const atts = mail.attackers || [];
+    const atts = km.attackers || mail.attackers || [];
     if (atts.length === 1 && atts[0].faction_id) npcKills++;
     else shipKills++;
     for (const att of atts) {
@@ -1672,7 +1672,7 @@ function renderZkbStats(el, sid, kills, fetchedAt) {
 
 function _findCorpAllianceInKills(corpId, kills) {
   for (const km of kills) {
-    for (const att of (km.killmail?.attackers || [])) {
+    for (const att of (km.attackers || km.killmail?.attackers || [])) {
       if (att.corporation_id === corpId && att.alliance_id) return att.alliance_id;
     }
   }
