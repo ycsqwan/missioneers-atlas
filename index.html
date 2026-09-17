@@ -1806,20 +1806,68 @@ async function esiSearch(query, categories) {
 
 async function doEsiQuery(sid) {
   setStatus(`ESI query: ${sid}…`, 'yellow');
-  const [kills, jumps] = await Promise.all([
+  const nm = systems[sid]?.name || {};
+
+  // Parallel: ESI 1h snapshot + zkb 24h + zkb 48h
+  const [kills, jumps, zkb24h, zkb48h] = await Promise.all([
     esiFetch('/universe/system_kills/'),
     esiFetch('/universe/system_jumps/'),
+    zkbFetch(sid, 86400),
+    zkbFetch(sid, 172800),
   ]);
+
+  const now = new Date().toLocaleString();
   const kd = kills ? kills.find(k => k.system_id === sid) : null;
   const jd = jumps ? jumps.find(j => j.system_id === sid) : null;
-  const nm = systems[sid]?.name || {};
-  let report = `=== ESI Query: ${nm.en} (${sid}) ===\n\n`;
+
+  let report = `=== ESI Query: ${nm.en} (${sid}) ===\n`;
+  report += `Queried: ${now}\n\n`;
+
+  // ESI 1-hour snapshot
+  report += `── Last 1 Hour (ESI) ──\n`;
   if (kd) report += `NPC Kills:  ${kd.npc_kills}\nShip Kills: ${kd.ship_kills}\nPod Kills:  ${kd.pod_kills}\n`;
   else report += 'Kill data: N/A\n';
   if (jd) report += `Ship Jumps: ${jd.ship_jumps}\n`;
   else report += 'Jump data: N/A\n';
+
+  // zKillboard 24h
+  report += `\n── Last 24 Hours (zKillboard) ──\n`;
+  if (zkb24h) report += zkb24h; else report += 'N/A\n';
+
+  // zKillboard 48h
+  report += `\n── Last 48 Hours (zKillboard) ──\n`;
+  if (zkb48h) report += zkb48h; else report += 'N/A\n';
+
   showReports('ESI: ' + nm.en, report);
   setStatus('ESI query done', 'green');
+}
+
+async function zkbFetch(sid, pastSeconds) {
+  try {
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), 10000);
+    const resp = await fetch(`https://zkillboard.com/api/systemID/${sid}/pastSeconds/${pastSeconds}/`, {
+      headers: { 'Accept': 'application/json', 'User-Agent': 'MissioneersAtlas/6.0' },
+      signal: ctrl.signal
+    });
+    clearTimeout(timer);
+    if (!resp.ok) return null;
+    const kills = await resp.json();
+    return _summarizeZkb(kills);
+  } catch { return null; }
+}
+
+function _summarizeZkb(kills) {
+  if (!kills || kills.length === 0) return 'No kills in this period\n';
+  let shipKills = 0, npcKills = 0, totalValue = 0;
+  for (const km of kills) {
+    const atts = km.attackers || km.killmail?.attackers || [];
+    const zkb = km.zkb || {};
+    totalValue += zkb.totalValue || 0;
+    if (atts.length === 1 && atts[0].faction_id) npcKills++;
+    else shipKills++;
+  }
+  return `Ship Kills: ${shipKills}\nNPC Kills:  ${npcKills}\nTotal:      ${kills.length}\nISK Value:  ${formatISK(totalValue)}\n`;
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
