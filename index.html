@@ -1532,7 +1532,10 @@ function showDetail(sid) {
 
   // zKillboard48h stats placeholder
   html += `<div class="sep"></div>
-    <div style="font-size:11px;font-weight:600;color:var(--red);margin:6px 0">zKillboard 48h Activity</div>
+    <div style="display:flex;align-items:center;gap:8px;margin:6px 0">
+      <span style="font-size:11px;font-weight:600;color:var(--red)">zKillboard 48h Activity</span>
+      <button class="btn" style="font-size:9px;padding:1px 6px" onclick="refreshZkbStats(${sid})" title="Refresh zKillboard data">↻ Refresh</button>
+    </div>
     <div id="zkb-stats" style="font-size:10px;color:var(--text-dim)">Loading…</div>`;
 
   // ESI actions
@@ -1568,10 +1571,11 @@ async function _resolveAllianceName(aid) {
   _allianceNameCache[aid] = `Alliance ${aid}`;
   return _allianceNameCache[aid];
 }
-async function loadZkbStats(sid) {
+async function loadZkbStats(sid, force) {
   const el = document.getElementById('zkb-stats');
   if (!el) return;
-  if (_zkbCache[sid]) { renderZkbStats(el, sid, _zkbCache[sid]); return; }
+  if (!force && _zkbCache[sid]) { renderZkbStats(el, sid, _zkbCache[sid].kills, _zkbCache[sid].fetchedAt); return; }
+  el.innerHTML = '<span style="color:var(--text-dim)">Loading…</span>';
   try {
     const ctrl = new AbortController();
     const timer = setTimeout(() => ctrl.abort(), 10000);
@@ -1582,16 +1586,24 @@ async function loadZkbStats(sid) {
     clearTimeout(timer);
     if (!resp.ok) { el.textContent = `HTTP ${resp.status}`; return; }
     const kills = await resp.json();
-    _zkbCache[sid] = kills;
-    renderZkbStats(el, sid, kills);
+    const fetchedAt = new Date();
+    _zkbCache[sid] = { kills, fetchedAt };
+    renderZkbStats(el, sid, kills, fetchedAt);
   } catch (e) {
     el.textContent = e.name === 'AbortError' ? 'Request timeout' : 'Fetch failed';
   }
 }
 
-function renderZkbStats(el, sid, kills) {
+function refreshZkbStats(sid) {
+  delete _zkbCache[sid];
+  loadZkbStats(sid, true);
+}
+
+function renderZkbStats(el, sid, kills, fetchedAt) {
   if (!kills || kills.length === 0) {
-    el.innerHTML = '<span style="color:var(--text-dim)">No kills in past 48h</span>';
+    let html = '<span style="color:var(--text-dim)">No kills in past 48h</span>';
+    if (fetchedAt) html += `<div style="margin-top:4px;color:var(--text-dim);font-size:9px">Fetched: ${fetchedAt.toLocaleString()}</div>`;
+    el.innerHTML = html;
     return;
   }
   const corpKills = {}, allianceKills = {};
@@ -1635,6 +1647,7 @@ function renderZkbStats(el, sid, kills) {
       html += `<div style="margin-left:8px;font-size:10px"><span class="zkb-a-name" data-aid="${aidStr}">${aidStr}</span> <span style="color:var(--red)">${cnt} kills</span></div>`;
     }
   }
+  if (fetchedAt) html += `<div style="margin-top:6px;color:var(--text-dim);font-size:9px">Fetched: ${fetchedAt.toLocaleString()}</div>`;
   el.innerHTML = html;
 
   // Async resolve alliance names
@@ -3152,8 +3165,12 @@ function _initLPFilters() {
 
 function doLPFSearch() {
   const name = document.getElementById('lpf-name').value.trim().toLowerCase();
-  if (!name || name.length < 2) {
-    document.getElementById('lpf-status').textContent = 'Type at least 2 characters to search';
+  const filterFaction = document.getElementById('lpf-faction')?.value || '';
+  const filterCorp = document.getElementById('lpf-corp')?.value || '';
+
+  // Need either a search term or a filter
+  if ((!name || name.length < 2) && !filterFaction && !filterCorp) {
+    document.getElementById('lpf-status').textContent = 'Type at least 2 characters, or select a faction/corp filter';
     return;
   }
 
@@ -3168,31 +3185,47 @@ function doLPFSearch() {
 
   document.getElementById('lpf-status').textContent = 'Searching…';
 
-  // Get faction/corp filters
-  const filterFaction = document.getElementById('lpf-faction')?.value || '';
-  const filterCorp = document.getElementById('lpf-corp')?.value || '';
+  let matchedTids = [];
 
-  // Search by type name using typesNames (bilingual)
-  const matchedTids = [];
-  for (const [tidStr, nm] of Object.entries(typesNames || {})) {
-    const en = (nm.en || '').toLowerCase();
-    const zh = (nm.zh || '').toLowerCase();
-    if ((en.includes(name) || zh.includes(name)) && lpOffersIndex[tidStr]) {
-      matchedTids.push(tidStr);
+  if (name && name.length >= 2) {
+    // Search by type name using typesNames (bilingual)
+    for (const [tidStr, nm] of Object.entries(typesNames || {})) {
+      const en = (nm.en || '').toLowerCase();
+      const zh = (nm.zh || '').toLowerCase();
+      if ((en.includes(name) || zh.includes(name)) && lpOffersIndex[tidStr]) {
+        matchedTids.push(tidStr);
+      }
+      if (matchedTids.length >= 100) break;
     }
-    if (matchedTids.length >= 100) break;
+  } else {
+    // No name filter — show all items for selected corp/faction
+    for (const [tidStr, offers] of Object.entries(lpOffersIndex || {})) {
+      for (const offer of offers) {
+        const corpId = offer._corp_id;
+        if (filterCorp && String(corpId) !== filterCorp) continue;
+        if (filterFaction) {
+          const corp = SDE.corpsById[corpId];
+          if (!corp || String(corp.factionID) !== filterFaction) continue;
+        }
+        matchedTids.push(tidStr);
+        break; // one match per type is enough to include it
+      }
+      if (matchedTids.length >= 200) break;
+    }
   }
 
   if (matchedTids.length === 0) {
-    document.getElementById('lpf-results').innerHTML = '<div style="padding:20px;color:var(--text-dim);text-align:center">No LP offers found for items matching "' + name + '"</div>';
+    const hint = name ? `matching "${name}"` : `for the selected ${filterCorp ? 'corporation' : 'faction'}`;
+    document.getElementById('lpf-results').innerHTML = `<div style="padding:20px;color:var(--text-dim);text-align:center">No LP offers found ${hint}</div>`;
     document.getElementById('lpf-status').textContent = '';
     document.getElementById('lpf-summary').textContent = '';
     return;
   }
 
   // Build results table
+  const limit = name ? 50 : 500;
   const rows = [];
-  for (const tid of matchedTids.slice(0, 50)) {
+  for (const tid of matchedTids.slice(0, limit)) {
     const offers = lpOffersIndex[tid];
     const typeName = resolveTypeName(+tid);
 
@@ -3242,7 +3275,8 @@ function doLPFSearch() {
 
   document.getElementById('lpf-status').textContent = '';
   const filterStr = filterCorp ? ` (filtered: ${lpOffersCorpNames?.[filterCorp] || 'Corp '+filterCorp})` : filterFaction ? ` (filtered: ${SDE.factionsById[+filterFaction]?.name?.en || 'Faction'})` : '';
-  document.getElementById('lpf-summary').textContent = `${rows.length} offers across ${matchedTids.length} items${filterStr}`;
+  const truncNote = matchedTids.length > limit ? ` (showing first ${limit})` : '';
+  document.getElementById('lpf-summary').textContent = `${rows.length} offers across ${matchedTids.length} items${filterStr}${truncNote}`;
 
   // Show detail for first row
   if (rows.length > 0) {
