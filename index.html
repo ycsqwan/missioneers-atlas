@@ -189,12 +189,16 @@ select{cursor:pointer}
 }
 #theme-btn:hover{color:var(--accent);border-color:var(--accent)}
 .zoom-hint{
-  position:absolute;top:13px;right:192px;z-index:5;
-  font-size:9px;color:var(--text-dim);letter-spacing:0.3px;
-  opacity:0.5;cursor:default;white-space:nowrap;
-  text-transform:uppercase;font-weight:500;font-family:Consolas,'Courier New',monospace;
+  position:absolute;top:13px;right:194px;z-index:5;
+  font-size:10px;color:var(--text-dim);letter-spacing:0.5px;
+  opacity:0.8;cursor:default;white-space:nowrap;
+  text-transform:uppercase;font-weight:600;font-family:Consolas,'Courier New',monospace;
+  padding:1px 5px;border-radius:3px;
+  background:rgba(255,255,255,0.04);
 }
-.zoom-hint:hover{opacity:1;color:var(--accent)}
+[data-theme="light"] .zoom-hint{background:rgba(0,0,0,0.04)}
+.zoom-hint:hover{opacity:1;color:var(--accent);background:rgba(255,255,255,0.08)}
+[data-theme="light"] .zoom-hint:hover{background:rgba(0,0,0,0.08)}
 #donate-panel{
   position:absolute;top:42px;right:10px;z-index:5;display:none;
   background:rgba(0,0,0,.92);border:1px solid var(--border);
