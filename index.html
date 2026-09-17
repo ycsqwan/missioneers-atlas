@@ -2021,6 +2021,7 @@ async function doRouteScan() {
   showReports('Route', report);
   highlight = destId;
   fitToSet(path);
+  showDetail(destId);
   requestRedraw();
   setStatus(`Route: ${path.length-1} jumps`, 'green');
 }
@@ -2067,6 +2068,7 @@ async function doFullScan() {
 
   showReports('Full Scan', report);
   fitToSet([...visited.keys()]);
+  showDetail(sid);
   requestRedraw();
   setStatus(`Scan done: ${visited.size} systems`, 'green');
 }
@@ -2096,6 +2098,7 @@ async function doQuickScan() {
 
   const report = `Quick Scan: ${origin} (${jumps}j)\nSystems: ${visited.size} | Kills: ${totalKills} | Jumps: ${totalJumps2}`;
   showReports('Quick Scan', report);
+  showDetail(sid);
   setStatus(`Quick scan done`, 'green');
 }
 
