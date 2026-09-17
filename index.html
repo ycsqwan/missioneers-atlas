@@ -1472,7 +1472,7 @@ function showDetail(sid) {
         const divName = AGENT_DIVISION_NAMES[a.divisionID] || `Div ${a.divisionID}`;
         html += `<div class="agent-card">
           <div class="agent-name">${a.name} <span class="agent-level l${a.level}">L${a.level}</span></div>
-          <div class="agent-detail">${corpName} · ${divName}${a.isLocator?' · Locator':''}</div>
+          <div class="agent-detail">${corpName} · ${divName} · ${AGENT_TYPE_NAMES[a.agentTypeID]||''}${a.isLocator?' · Locator':''}</div>
         </div>`;
       }
     }
@@ -1530,6 +1530,11 @@ function showDetail(sid) {
     <div class="node"><span class="node-key">2D</span> <span class="node-val">${(p2d.x||0).toExponential(4)}, ${(p2d.y||0).toExponential(4)}</span></div>
     <div class="node"><span class="node-key">3D</span> <span class="node-val">${(pos3d.x||0).toExponential(4)}, ${(pos3d.y||0).toExponential(4)}, ${(pos3d.z||0).toExponential(4)}</span></div>`;
 
+  // zKillboard48h stats placeholder
+  html += `<div class="sep"></div>
+    <div style="font-size:11px;font-weight:600;color:var(--red);margin:6px 0">zKillboard 48h Activity</div>
+    <div id="zkb-stats" style="font-size:10px;color:var(--text-dim)">Loading…</div>`;
+
   // ESI actions
   html += `<div class="sep"></div>
     <div class="btn-row">
@@ -1538,9 +1543,128 @@ function showDetail(sid) {
     </div>`;
   html += '</div>';
   document.getElementById('detail-body').innerHTML = html;
+  loadZkbStats(sid);
 }
 
 function closeDetail() { document.getElementById('detail-overlay').classList.remove('open'); }
+
+// ═══ zKillboard 48h Stats ═══
+const _zkbCache = {};
+const _allianceNameCache = {};
+
+async function _resolveAllianceName(aid) {
+  if (!aid) return '';
+  if (_allianceNameCache[aid]) return _allianceNameCache[aid];
+  try {
+    const resp = await fetch(`https://esi.evetech.net/latest/alliances/${aid}/?datasource=tranquility`, {
+      headers: { 'Accept': 'application/json' }
+    });
+    if (resp.ok) {
+      const d = await resp.json();
+      _allianceNameCache[aid] = d.name || `Alliance ${aid}`;
+      return _allianceNameCache[aid];
+    }
+  } catch {}
+  _allianceNameCache[aid] = `Alliance ${aid}`;
+  return _allianceNameCache[aid];
+}
+async function loadZkbStats(sid) {
+  const el = document.getElementById('zkb-stats');
+  if (!el) return;
+  if (_zkbCache[sid]) { renderZkbStats(el, sid, _zkbCache[sid]); return; }
+  try {
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), 10000);
+    const resp = await fetch(`https://zkillboard.com/api/systemID/${sid}/pastSeconds/172800/`, {
+      headers: { 'Accept': 'application/json', 'User-Agent': 'MissioneersAtlas/6.0' },
+      signal: ctrl.signal
+    });
+    clearTimeout(timer);
+    if (!resp.ok) { el.textContent = `HTTP ${resp.status}`; return; }
+    const kills = await resp.json();
+    _zkbCache[sid] = kills;
+    renderZkbStats(el, sid, kills);
+  } catch (e) {
+    el.textContent = e.name === 'AbortError' ? 'Request timeout' : 'Fetch failed';
+  }
+}
+
+function renderZkbStats(el, sid, kills) {
+  if (!kills || kills.length === 0) {
+    el.innerHTML = '<span style="color:var(--text-dim)">No kills in past 48h</span>';
+    return;
+  }
+  const corpKills = {}, allianceKills = {};
+  let npcKills = 0, shipKills = 0, totalValue = 0;
+  for (const km of kills) {
+    const mail = km.killmail || {};
+    const zkb = km.zkb || {};
+    totalValue += zkb.totalValue || 0;
+    const atts = mail.attackers || [];
+    if (atts.length === 1 && atts[0].faction_id) npcKills++;
+    else shipKills++;
+    for (const att of atts) {
+      if (att.final_blow && att.corporation_id) {
+        corpKills[att.corporation_id] = (corpKills[att.corporation_id] || 0) + 1;
+        if (att.alliance_id) allianceKills[att.alliance_id] = (allianceKills[att.alliance_id] || 0) + 1;
+      }
+    }
+  }
+
+  const topCorps = Object.entries(corpKills).sort((a,b) => b[1]-a[1]).slice(0,5);
+  const topAlliances = Object.entries(allianceKills).sort((a,b) => b[1]-a[1]).slice(0,5);
+
+  let html = `<div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:6px">`;
+  html += `<span>Ship Kills: <b style="color:var(--text-bright)">${shipKills}</b></span>`;
+  html += `<span>NPC Kills: <b style="color:var(--text-bright)">${npcKills}</b></span>`;
+  html += `<span>Total: <b style="color:var(--text-bright)">${kills.length}</b></span>`;
+  html += `<span>ISK: <b style="color:var(--yellow)">${formatISK(totalValue)}</b></span>`;
+  html += `</div>`;
+
+  if (topCorps.length) {
+    html += `<div style="margin-top:4px"><span style="color:var(--accent);font-weight:600">Top Killing Corps:</span><span id="zkb-corp-alliance"></span></div>`;
+    for (const [cidStr, cnt] of topCorps) {
+      const cid = +cidStr;
+      const corpName = SDE?.corpsById[cid]?.name || `Corp ${cid}`;
+      html += `<div style="margin-left:8px;font-size:10px">${corpName} <span style="color:var(--red)">${cnt} kills</span> <span class="zkb-a-tag" data-cid="${cid}" style="color:var(--text-dim)"></span></div>`;
+    }
+  }
+  if (topAlliances.length) {
+    html += `<div style="margin-top:4px"><span style="color:var(--accent);font-weight:600">Top Killing Alliances:</span></div>`;
+    for (const [aidStr, cnt] of topAlliances) {
+      html += `<div style="margin-left:8px;font-size:10px"><span class="zkb-a-name" data-aid="${aidStr}">${aidStr}</span> <span style="color:var(--red)">${cnt} kills</span></div>`;
+    }
+  }
+  el.innerHTML = html;
+
+  // Async resolve alliance names
+  for (const att of topAlliances) {
+    _resolveAllianceName(+att[0]).then(name => {
+      const sp = el.querySelector(`.zkb-a-name[data-aid="${att[0]}"]`);
+      if (sp) sp.textContent = name;
+    });
+  }
+  // Async resolve corp → alliance mapping
+  for (const [cidStr] of topCorps) {
+    const cid = +cidStr;
+    const aid = _findCorpAllianceInKills(cid, kills);
+    if (aid) {
+      _resolveAllianceName(aid).then(name => {
+        const sp = el.querySelector(`.zkb-a-tag[data-cid="${cid}"]`);
+        if (sp) sp.textContent = `[${name}]`;
+      });
+    }
+  }
+}
+
+function _findCorpAllianceInKills(corpId, kills) {
+  for (const km of kills) {
+    for (const att of (km.killmail?.attackers || [])) {
+      if (att.corporation_id === corpId && att.alliance_id) return att.alliance_id;
+    }
+  }
+  return null;
+}
 
 function toggleDonate() {
   const p = document.getElementById('donate-panel');
@@ -2574,7 +2698,8 @@ function openMissionHub() {
           html += `<span style="color:var(--text)">${cn}</span> (${agents.length}): `;
           html += agents.map(a => {
             const divName = AGENT_DIVISION_NAMES[a.divisionID] || '';
-            return `${a.name} [L${a.level}${divName?'/'+divName:''}${a.isLocator?' [L]':''}]`;
+            const typeName = AGENT_TYPE_NAMES[a.agentTypeID] || '';
+            return `${a.name} [L${a.level}${typeName?'/'+typeName:''}${divName?'/'+divName:''}${a.isLocator?' [L]':''}]`;
           }).join(', ');
           html += `</div>`;
         }
@@ -2894,6 +3019,10 @@ function openLPStoreFinder() {
       <div style="flex:2"><label>Item Name</label><input type="text" id="lpf-name" placeholder="e.g. Navy Cap Booster 800, Imperial Navy Slicer, 帝国海军切割机" style="width:100%"></div>
       <div style="display:flex;align-items:flex-end"><button class="btn accent" id="lpf-search-btn">Search</button></div>
       <div style="display:flex;align-items:flex-end"><button class="btn" id="lpf-refresh-btn">Refresh</button></div>
+    </div>
+    <div class="mf-row">
+      <div style="flex:1"><label>Faction</label><select id="lpf-faction" style="width:100%"><option value="">All Factions</option></select></div>
+      <div style="flex:1"><label>Corporation</label><select id="lpf-corp" style="width:100%"><option value="">All Corps</option></select></div>
     </div>`;
 
   m.body.innerHTML = `
@@ -2910,6 +3039,7 @@ function openLPStoreFinder() {
   // Auto-load cache if not already loaded
   if (lpOffersLoaded) {
     document.getElementById('lpf-status').textContent = `LP data loaded (${Object.keys(lpOffersIndex).length} items from cache, saved: ${lpOffersSavedAt || '?'})`;
+    _initLPFilters();
   } else {
     doLoadLPData();
   }
@@ -2948,6 +3078,7 @@ async function doLoadLPData() {
     document.getElementById('lpf-status').textContent = `Loaded ${totalOffers.toLocaleString()} offers from cache (saved: ${cache.saved_at || '?'})`;
     document.getElementById('lpf-summary').textContent = `${Object.keys(lpOffersIndex).length} unique items available`;
     _hideLoadBar();
+    _initLPFilters();
   } catch (e) {
     document.getElementById('lpf-status').textContent = `Error loading cache: ${e.message}`;
   } finally {
@@ -2962,6 +3093,61 @@ function resolveTypeName(tid) {
     return nm.zh ? `${nm.en} (${nm.zh})` : nm.en;
   }
   return `Type ${tid}`;
+}
+
+function _initLPFilters() {
+  const factionSel = document.getElementById('lpf-faction');
+  const corpSel = document.getElementById('lpf-corp');
+  if (!factionSel || !SDE) return;
+
+  // Build faction → corps mapping from offers
+  const factionCorps = {}; // factionID → Set<corpId>
+  const allCorpIds = new Set();
+  for (const offers of Object.values(lpOffersIndex || {})) {
+    for (const o of offers) {
+      const cid = o._corp_id;
+      if (!cid) continue;
+      allCorpIds.add(cid);
+      const corp = SDE.corpsById[cid];
+      const fid = corp?.factionID;
+      if (fid) {
+        if (!factionCorps[fid]) factionCorps[fid] = new Set();
+        factionCorps[fid].add(cid);
+      }
+    }
+  }
+
+  // Populate faction dropdown
+  const factions = Object.keys(factionCorps).sort((a,b) => {
+    const an = SDE.factionsById[+a]?.name?.en || '';
+    const bn = SDE.factionsById[+b]?.name?.en || '';
+    return an.localeCompare(bn);
+  });
+  factionSel.innerHTML = '<option value="">All Factions</option>';
+  for (const fid of factions) {
+    const f = SDE.factionsById[+fid];
+    const nm = f?.name?.en || f?.name || `Faction ${fid}`;
+    factionSel.innerHTML += `<option value="${fid}">${nm} (${factionCorps[fid].size})</option>`;
+  }
+
+  // Faction change → update corp dropdown
+  factionSel.onchange = () => {
+    const fid = factionSel.value;
+    corpSel.innerHTML = '<option value="">All Corps</option>';
+    if (!fid) return;
+    const corps = [...(factionCorps[fid] || [])].sort((a,b) => {
+      const an = lpOffersCorpNames?.[String(a)] || SDE.corpsById[a]?.name || '';
+      const bn = lpOffersCorpNames?.[String(b)] || SDE.corpsById[b]?.name || '';
+      return an.localeCompare(bn);
+    });
+    for (const cid of corps) {
+      const nm = lpOffersCorpNames?.[String(cid)] || SDE.corpsById[cid]?.name || `Corp ${cid}`;
+      corpSel.innerHTML += `<option value="${cid}">${nm}</option>`;
+    }
+    doLPFSearch();
+  };
+
+  corpSel.onchange = () => doLPFSearch();
 }
 
 function doLPFSearch() {
@@ -2981,6 +3167,10 @@ function doLPFSearch() {
   }
 
   document.getElementById('lpf-status').textContent = 'Searching…';
+
+  // Get faction/corp filters
+  const filterFaction = document.getElementById('lpf-faction')?.value || '';
+  const filterCorp = document.getElementById('lpf-corp')?.value || '';
 
   // Search by type name using typesNames (bilingual)
   const matchedTids = [];
@@ -3008,6 +3198,12 @@ function doLPFSearch() {
 
     for (const offer of offers) {
       const corpId = offer._corp_id;
+      // Apply faction/corp filter
+      if (filterCorp && String(corpId) !== filterCorp) continue;
+      if (filterFaction) {
+        const corp = SDE.corpsById[corpId];
+        if (!corp || String(corp.factionID) !== filterFaction) continue;
+      }
       const corpName = lpOffersCorpNames?.[String(corpId)] || offer._corp_name || SDE.corpsById[corpId]?.name || `Corp ${corpId}`;
       rows.push({
         tid: +tid, typeName, corpId, corpName,
@@ -3045,7 +3241,8 @@ function doLPFSearch() {
   el.innerHTML = html;
 
   document.getElementById('lpf-status').textContent = '';
-  document.getElementById('lpf-summary').textContent = `${rows.length} offers across ${matchedTids.length} items`;
+  const filterStr = filterCorp ? ` (filtered: ${lpOffersCorpNames?.[filterCorp] || 'Corp '+filterCorp})` : filterFaction ? ` (filtered: ${SDE.factionsById[+filterFaction]?.name?.en || 'Faction'})` : '';
+  document.getElementById('lpf-summary').textContent = `${rows.length} offers across ${matchedTids.length} items${filterStr}`;
 
   // Show detail for first row
   if (rows.length > 0) {
