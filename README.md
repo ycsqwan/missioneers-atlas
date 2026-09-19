@@ -21,7 +21,7 @@ A comprehensive PvE mission planning and route analysis tool for EVE Online — 
   - Agent Level (1–5) / Type (Basic, Epic Arc, Faction Warfare, etc.)
   - Max Jumps from origin, Security range, Exclude Locators
 - **Nearest LP Store** — Find the closest Loyalty Point store from any system, with Faction→Corporation cascade filtering
-- **Mission Hub Discovery** — Top 200 most agent-dense systems in New Eden, ranked and filterable by Region, Constellation, Min Level, Agent Type, Division, Faction, Corporation
+- **Mission Hub Discovery** — All 1,700+ systems with mission agents in New Eden, ranked by agent density and filterable by Region, Constellation, Min Level (≥), Agent Type, Division, Faction, Corporation
 - **Mission Query** — Browse 2,892 missions with full dialogue text in Chinese & English, searchable by name (supports both languages)
 - **LP Store Finder** — Reverse lookup: enter an item name → find which NPC corporation LP stores sell it, showing LP cost, ISK cost, and required items
 
@@ -60,7 +60,7 @@ A comprehensive PvE mission planning and route analysis tool for EVE Online — 
 | `station_names.json` | 5,210 NPC station real names from ESI | 316 KB |
 | `missions_data.json` | 2,892 missions with full dialogue text | 9.7 MB |
 | `lp_offers_cache.json` | LP store offers cache | 7.0 MB |
-| `mission_hubs.json` | Top 200 mission-dense systems | 16 KB |
+| `mission_hubs.json` | All 1,700+ systems with mission agents | 125 KB |
 | `agent_types.json` | Agent type definitions | 284 B |
 | `agent_divisions.json` | Agent division definitions | 698 B |
 
