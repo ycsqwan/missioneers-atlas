@@ -631,6 +631,133 @@ const I18N = {
     initStatus: 'Initializing…',
     donateMsg: 'If you enjoy this tool, please donate ISK in-game to <span class="d-char">IndentationError</span> with the note:<br><span class="d-char">for missioneers-atlas</span>',
     zoomHint: 'Ctrl+Scroll: UI Scale',
+
+    // Modal common
+    search: 'Search',
+    close: 'Close',
+    level: 'Level',
+    maxJumps: 'Max Jumps',
+    security: 'Security',
+    origin: 'Origin',
+    division: 'Division',
+    faction: 'Faction',
+    corporation: 'Corporation',
+    corps: 'Corps',
+    type: 'Type',
+    allDivisions: 'All Divisions',
+    allFactions: 'All Factions',
+    allCorps: 'All Corporations',
+    allTypes: 'All Types',
+    excludeLocators: 'Exclude Locators',
+    jumps: 'Jumps',
+    system: 'System',
+    sec: 'Sec',
+    agents: 'agents',
+    agent: 'Agent',
+    station: 'Station',
+    item: 'Item',
+    allConst: 'All Constellations',
+    minLevel: 'Min Level',
+    agentType: 'Agent Type',
+    allMissionTypes: 'All Mission Types',
+    scanRoute: 'Scan Route',
+    previewPath: 'Preview Path',
+    sdeNotLoaded: 'SDE data not loaded yet',
+    needBoth: 'Need both origin and destination',
+    originNotFound: 'Origin not found',
+    destNotFound: 'Destination not found',
+    sysNotFound: 'System not found',
+    noPath: 'No path',
+    routeCleared: 'Route cleared',
+    noLPStores: 'No LP stores found within 50 jumps',
+    noResults: 'No results',
+
+    // Agent Finder
+    afSearchPH: 'e.g. agent name…',
+
+    // Nearest LP Store
+    lpSearchPH: 'Enter origin system name…',
+    lpJumpsHint: 'Max jumps (1-50)',
+    lpResultsCount: '{n} LP stores found (showing {m})',
+
+    // Mission Hub
+    mhClickExpand: 'Click to expand agents detail',
+    mhFound: 'Found {n} systems with L{lv}+ mission agents. Top: {sys} ({agents} agents)',
+
+    // Mission Query
+    mqName: 'Mission Name',
+    mqPlaceholder: 'e.g. blockade, worlds collide, 牌匾…',
+    mqSelectHint: 'Select a mission to view details',
+    mqLoading: 'Loading missions data (12 MB)...',
+    mqFailed: 'Failed to load missions data',
+    mqNoMatch: 'No matching missions found. Try: blockade, worlds collide, 牌匾, delivery, etc.',
+    mqFound: 'Found {n} mission(s)',
+    mqShowingFirst: ' (showing first 200)',
+
+    // Dialogue labels
+    dlgBriefing: 'Briefing',
+    dlgAgentOffered: 'Agent (offered)',
+    dlgYouAccept: 'You (accept)',
+    dlgAgentAccepted: 'Agent (accepted)',
+    dlgYouDecline: 'You (decline)',
+    dlgAgentDeclined: 'Agent (declined)',
+    dlgYouComplete: 'You (complete)',
+    dlgAgentCompleted: 'Agent (completed)',
+    dlgYouAsk: 'You (ask)',
+    dlgYouQuit: 'You (quit)',
+    dlgAgentQuitted: 'Agent (quitted)',
+    dlgExtraHeader: 'Extra Info Header',
+    dlgExtraBody: 'Extra Info',
+
+    // Mission detail
+    mdType: 'Type',
+    mdObjectives: 'Objectives',
+    mdKillObj: 'Kill objective (dungeon {id})',
+    mdCourierObj: 'Courier: {qty}x {item}',
+    mdRewards: 'Rewards',
+    mdReward: 'Reward',
+    mdBonus: 'Bonus',
+    mdWithin: 'within {s}s',
+    mdStandingRewards: 'Standing rewards: Yes',
+    mdDialogues: 'Dialogues',
+
+    // LP Store Finder
+    lpfTitle: 'LP Store Finder — Item to Corporation Lookup',
+    lpfItemName: 'Item Name',
+    lpfPlaceholder: 'e.g. Navy Cap Booster 800, Imperial Navy Slicer',
+    lpfRefresh: 'Refresh',
+    lpfAllCorps: 'All Corps',
+    lpfSearchHint: 'Search for an item to see LP offers',
+    lpfMinChars: 'Type at least 2 characters, or select a faction/corp filter',
+    lpfDataLoading: 'LP data is loading, please wait…',
+    lpfNotLoaded: 'LP data not loaded — click [Refresh] to load',
+    lpfSearching: 'Searching…',
+    lpfNoOffers: 'No LP offers found',
+    lpfReqItems: 'Required Items',
+    lpfNone: 'None (LP + ISK only)',
+    lpfMatching: 'matching "{name}"',
+    lpfForCorp: 'for the selected corporation',
+    lpfForFaction: 'for the selected faction',
+    lpfOffersAcross: '{offers} offers across {items} items',
+    lpfFiltered: ' (filtered: {name})',
+    lpfShowingFirst: ' (showing first {n})',
+    lpfLoaded: 'Loaded {n} offers from cache (saved: {date})',
+    lpfItemsAvail: '{n} unique items available',
+    lpfLPCacheLoaded: 'LP data loaded ({n} items from cache, saved: {date})',
+    lpfLoadingCache: 'Loading LP offers from local cache…',
+    lpfAlreadyLoaded: 'Already loaded ({n} items)',
+    lpfLoadError: 'Error loading cache: {msg}',
+
+    // Status messages
+    scanDone: 'Scan done: {n} systems',
+    quickScanDone: 'Quick scan done',
+    overviewDone: 'Overview done',
+    esiquiryDone: 'ESI query done',
+    activityDone: 'Activity done: {n} killmails',
+    activityFailed: 'Activity fetch failed',
+    copied: 'Copied: {text}',
+    sdeLoaded: 'SDE loaded: {n} systems, {m} agents',
+    routeDone: 'Route: {n} jumps',
   },
   zh: {
     subtitle: '路线拓扑 · 完整 ESI · 网页版',
@@ -671,10 +798,141 @@ const I18N = {
     initStatus: '初始化中…',
     donateMsg: '如果你喜欢本项目，请在游戏内捐款至 <span class="d-char">IndentationError</span> 并注明：<span class="d-char">for missioneers-atlas</span>',
     zoomHint: 'Ctrl+滚轮：缩放界面',
+
+    // Modal common
+    search: '搜索',
+    close: '关闭',
+    level: '等级',
+    maxJumps: '最大跳数',
+    security: '安全等级',
+    origin: '起始',
+    division: '部门',
+    faction: '势力',
+    corporation: '军团',
+    corps: '军团',
+    type: '类型',
+    allDivisions: '全部部门',
+    allFactions: '全部势力',
+    allCorps: '全部军团',
+    allTypes: '全部类型',
+    excludeLocators: '排除定位员',
+    jumps: '跳数',
+    system: '星系',
+    sec: '安等',
+    agents: '代理人',
+    agent: '代理人',
+    station: '空间站',
+    item: '物品',
+    allConst: '全部星座',
+    minLevel: '最低等级',
+    agentType: '代理人类型',
+    allMissionTypes: '全部任务类型',
+    scanRoute: '扫描路线',
+    previewPath: '预览路径',
+    sdeNotLoaded: 'SDE 数据尚未加载',
+    needBoth: '需要起始和目标星系',
+    originNotFound: '未找到起始星系',
+    destNotFound: '未找到目标星系',
+    sysNotFound: '未找到星系',
+    noPath: '无路径',
+    routeCleared: '路线已清除',
+    noLPStores: '50 跳内未找到 LP 商店',
+    noResults: '无结果',
+
+    // Agent Finder
+    afSearchPH: '例如代理人名称…',
+
+    // Nearest LP Store
+    lpSearchPH: '输入起始星系名称…',
+    lpJumpsHint: '最大跳数 (1-50)',
+    lpResultsCount: '找到 {n} 个 LP 商店（显示 {m} 个）',
+
+    // Mission Hub
+    mhClickExpand: '点击展开代理人详情',
+    mhFound: '找到 {n} 个 L{lv}+ 任务代理人星系。最多：{sys}（{agents} 个代理人）',
+
+    // Mission Query
+    mqName: '任务名称',
+    mqPlaceholder: '例如 blockade、worlds collide、牌匾…',
+    mqSelectHint: '选择一个任务查看详情',
+    mqLoading: '正在加载任务数据（12 MB）...',
+    mqFailed: '加载任务数据失败',
+    mqNoMatch: '没有找到匹配的任务。试试：blockade、worlds collide、牌匾、delivery 等。',
+    mqFound: '找到 {n} 个任务',
+    mqShowingFirst: '（显示前 200 个）',
+
+    // Dialogue labels
+    dlgBriefing: '简报',
+    dlgAgentOffered: '代理人（提议）',
+    dlgYouAccept: '你（接受）',
+    dlgAgentAccepted: '代理人（已接受）',
+    dlgYouDecline: '你（拒绝）',
+    dlgAgentDeclined: '代理人（已拒绝）',
+    dlgYouComplete: '你（完成）',
+    dlgAgentCompleted: '代理人（已完成）',
+    dlgYouAsk: '你（询问）',
+    dlgYouQuit: '你（放弃）',
+    dlgAgentQuitted: '代理人（已放弃）',
+    dlgExtraHeader: '额外信息标题',
+    dlgExtraBody: '额外信息',
+
+    // Mission detail
+    mdType: '类型',
+    mdObjectives: '目标',
+    mdKillObj: '击杀目标（副本 {id}）',
+    mdCourierObj: '运输：{qty}x {item}',
+    mdRewards: '奖励',
+    mdReward: '奖励',
+    mdBonus: '额外奖励',
+    mdWithin: '（{s}秒内）',
+    mdStandingRewards: '声望奖励：有',
+    mdDialogues: '对话',
+
+    // LP Store Finder
+    lpfTitle: 'LP 商店查询 — 物品→军团',
+    lpfItemName: '物品名称',
+    lpfPlaceholder: '例如 Navy Cap Booster 800、帝国海军切割机',
+    lpfRefresh: '刷新',
+    lpfAllCorps: '全部军团',
+    lpfSearchHint: '搜索物品查看 LP 报价',
+    lpfMinChars: '至少输入 2 个字符，或选择势力/军团筛选',
+    lpfDataLoading: 'LP 数据加载中，请稍候…',
+    lpfNotLoaded: 'LP 数据未加载 — 点击 [刷新] 加载',
+    lpfSearching: '搜索中…',
+    lpfNoOffers: '未找到 LP 报价',
+    lpfReqItems: '所需物品',
+    lpfNone: '无（仅 LP + ISK）',
+    lpfMatching: '匹配 "{name}"',
+    lpfForCorp: '所选军团',
+    lpfForFaction: '所选势力',
+    lpfOffersAcross: '{offers} 条报价，涵盖 {items} 种物品',
+    lpfFiltered: '（筛选：{name}）',
+    lpfShowingFirst: '（显示前 {n} 个）',
+    lpfLoaded: '已从缓存加载 {n} 条报价（保存于：{date}）',
+    lpfItemsAvail: '{n} 种物品可用',
+    lpfLPCacheLoaded: 'LP 数据已加载（{n} 种物品，保存于：{date}）',
+    lpfLoadingCache: '正在从本地缓存加载 LP 报价…',
+    lpfAlreadyLoaded: '已加载（{n} 种物品）',
+    lpfLoadError: '加载缓存出错：{msg}',
+
+    // Status messages
+    scanDone: '扫描完成：{n} 个星系',
+    quickScanDone: '快速扫描完成',
+    overviewDone: '概览完成',
+    esiquiryDone: 'ESI 查询完成',
+    activityDone: '活动数据：{n} 条击杀',
+    activityFailed: '活动数据获取失败',
+    copied: '已复制：{text}',
+    sdeLoaded: 'SDE 已加载：{n} 个星系，{m} 个代理人',
+    routeDone: '路线：{n} 跳',
   }
 };
 
-function t(key) { return I18N[curLang]?.[key] || I18N.en[key] || key; }
+function t(key, params) {
+  let s = I18N[curLang]?.[key] || I18N.en[key] || key;
+  if (params) { for (const [k,v] of Object.entries(params)) s = s.replace('{'+k+'}', v); }
+  return s;
+}
 
 function setLang(lang) {
   curLang = lang;
@@ -1514,7 +1772,7 @@ function clearRoutePath() {
   routePath = null;
   highlight = null;
   requestRedraw();
-  setStatus('Route cleared', 'green');
+  setStatus(t('routeCleared'), 'green');
 }
 
 function fitRegion(name) {
@@ -2732,7 +2990,7 @@ function _bindRegionConstCascade(regionSelId, constSelId, rcMap) {
 // Intelligence — Agent Finder (dialog with full filters, matching desktop)
 // ═══════════════════════════════════════════════════════════════════════════
 function openAgentFinder() {
-  if (!SDE) { setStatus('SDE data not loaded yet', 'yellow'); return; }
+  if (!SDE) { setStatus(t('sdeNotLoaded'), 'yellow'); return; }
 
   const currentOrigin = document.getElementById('inp-origin').value.trim();
   const m = openModal('Agent Finder', 'wide');
@@ -2747,29 +3005,29 @@ function openAgentFinder() {
 
   m.filters.innerHTML = `
     <div class="mf-row">
-      <div><label>Origin System</label><input type="text" id="af-sys" value="${currentOrigin}" placeholder="e.g. Jita"></div>
-      <div><label>Max Jumps</label><input type="number" id="af-jumps" value="5" min="0" max="50" style="width:60px"></div>
-      <div><label>Sec Min</label><select id="af-sec-min"><option value="">Any</option><option>0.0</option><option>0.1</option><option>0.2</option><option>0.3</option><option>0.4</option><option>0.5</option><option>0.6</option><option>0.7</option><option>0.8</option><option>0.9</option><option>1.0</option></select></div>
-      <div><label>Sec Max</label><select id="af-sec-max"><option value="">Any</option><option>0.0</option><option>0.1</option><option>0.2</option><option>0.3</option><option>0.4</option><option>0.5</option><option>0.6</option><option>0.7</option><option>0.8</option><option>0.9</option><option>1.0</option></select></div>
-      <div><label>Level</label><select id="af-level"><option value="">All Levels</option><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option></select></div>
-      <div><label>Type</label><select id="af-type"><option value="">All Types</option>${typeOpts}</select></div>
+      <div><label>${t('origin')} System</label><input type="text" id="af-sys" value="${currentOrigin}" placeholder="e.g. Jita"></div>
+      <div><label>${t('maxJumps')}</label><input type="number" id="af-jumps" value="5" min="0" max="50" style="width:60px"></div>
+      <div><label>${t('security')} Min</label><select id="af-sec-min"><option value="">Any</option><option>0.0</option><option>0.1</option><option>0.2</option><option>0.3</option><option>0.4</option><option>0.5</option><option>0.6</option><option>0.7</option><option>0.8</option><option>0.9</option><option>1.0</option></select></div>
+      <div><label>${t('security')} Max</label><select id="af-sec-max"><option value="">Any</option><option>0.0</option><option>0.1</option><option>0.2</option><option>0.3</option><option>0.4</option><option>0.5</option><option>0.6</option><option>0.7</option><option>0.8</option><option>0.9</option><option>1.0</option></select></div>
+      <div><label>${t('level')}</label><select id="af-level"><option value="">${t('level')} - All</option><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option></select></div>
+      <div><label>${t('type')}</label><select id="af-type"><option value="">${t('allTypes')}</option>${typeOpts}</select></div>
     </div>
     <div class="mf-row">
-      <div><label>Region</label><select id="af-region"><option value="">All Regions</option>${afRegionOpts}</select></div>
-      <div><label>Constellation</label><select id="af-const"><option value="">All Constellations</option></select></div>
-      <div><label>Division</label><select id="af-div"><option value="">All Divisions</option>${divOpts}</select></div>
-      <div><label>Faction</label><select id="af-faction"><option value="">All Factions</option>${factionOpts}</select></div>
+      <div><label>Region</label><select id="af-region"><option value="">${t('allRegions')}</option>${afRegionOpts}</select></div>
+      <div><label>Constellation</label><select id="af-const"><option value="">${t('allConst')}</option></select></div>
+      <div><label>${t('division')}</label><select id="af-div"><option value="">${t('allDivisions')}</option>${divOpts}</select></div>
+      <div><label>${t('faction')}</label><select id="af-faction"><option value="">${t('allFactions')}</option>${factionOpts}</select></div>
       <div style="flex:2"><label>Corporation</label><select id="af-corp">${corpOpts}</select></div>
     </div>
     <div class="mf-row">
-      <div style="flex:0;display:flex;align-items:flex-end;padding-bottom:2px"><label class="modal-check"><input type="checkbox" id="af-exclude-loc" checked> Exclude Locators</label></div>
-      <div style="flex:0;display:flex;align-items:flex-end"><button class="btn accent" id="af-search-btn">Search</button></div>
+      <div style="flex:0;display:flex;align-items:flex-end;padding-bottom:2px"><label class="modal-check"><input type="checkbox" id="af-exclude-loc" checked> ${t('excludeLocators')}</label></div>
+      <div style="flex:0;display:flex;align-items:flex-end"><button class="btn accent" id="af-search-btn">${t('search')}</button></div>
     </div>`;
   _bindFactionCorpCascade('af-faction', 'af-corp');
   _bindRegionConstCascade('af-region', 'af-const', afRcMap);
 
   m.body.innerHTML = '<div class="split-top" id="af-results" style="overflow:auto"></div>';
-  m.footer.innerHTML = '<span class="modal-status" id="af-status">Enter system name and click Search</span><span class="modal-summary" id="af-summary"></span>';
+  m.footer.innerHTML = `<span class="modal-status" id="af-status">${t('origin')} + ${t('search')}</span><span class="modal-summary" id="af-summary"></span>`;
 
   document.getElementById('af-search-btn').onclick = doAgentSearch;
   // Enter key triggers search
@@ -2855,16 +3113,16 @@ function doAgentSearch() {
 
   const el = document.getElementById('af-results');
   if (results.length === 0) {
-    el.innerHTML = '<div style="padding:20px;color:var(--text-dim);text-align:center">No agents found matching filters</div>';
+    el.innerHTML = '<div style="padding:20px;color:var(--text-dim);text-align:center">' + t('noResults') + '</div>';
     document.getElementById('af-summary').textContent = '';
     return;
   }
 
   const shown = results.slice(0, 500);
   let html = `<table class="modal-table"><thead><tr>
-    <th class="col-num">#</th><th class="col-jumps">Jumps</th><th>System</th><th class="col-sec">Sec</th>
-    <th>Agent</th><th class="col-lvl">Lvl</th><th>Type</th><th>Division</th>
-    <th>Faction</th><th>Corporation</th><th>Station</th></tr></thead><tbody>`;
+    <th class="col-num">#</th><th class="col-jumps">${t('jumps')}</th><th>${t('system')}</th><th class="col-sec">${t('sec')}</th>
+    <th>${t('agent')}</th><th class="col-lvl">${t('level')}</th><th>${t('type')}</th><th>${t('division')}</th>
+    <th>${t('faction')}</th><th>${t('corporation')}</th><th>${t('station')}</th></tr></thead><tbody>`;
   for (let i=0; i<shown.length; i++) {
     const r = shown[i];
     const secStr = r.sec >= 0 ? r.sec.toFixed(1) : r.sec.toFixed(2);
@@ -2897,7 +3155,7 @@ function factionCorpsOf(fid) {
 // Intelligence — Nearest LP Store (dialog with corp selector, matching desktop)
 // ═══════════════════════════════════════════════════════════════════════════
 function openNearestLP() {
-  if (!SDE) { setStatus('SDE data not loaded yet', 'yellow'); return; }
+  if (!SDE) { setStatus(t('sdeNotLoaded'), 'yellow'); return; }
 
   const currentOrigin = document.getElementById('inp-origin').value.trim();
   const m = openModal('Nearest LP Store', 'wide');
@@ -2936,26 +3194,26 @@ function openNearestLP() {
       .map(c => `<option value="${c.id}">${c.name}${c.nameZh ? ' (' + c.nameZh + ')' : ''}</option>`)
       .join('');
   }
-  const corpOpts = '<option value="">All Corporations</option>' + buildLPCorpOpts('');
+  const corpOpts = '<option value="">' + t('allCorps') + '</option>' + buildLPCorpOpts('');
 
   m.filters.innerHTML = `
     <div class="mf-row">
-      <div style="flex:1.5"><label>Origin System</label><input type="text" id="lp-sys" value="${currentOrigin}" placeholder="e.g. Jita" style="width:100%"></div>
-      <div style="flex:1.5"><label>Faction</label><select id="lp-faction" style="width:100%"><option value="">All Factions</option>${factionOpts}</select></div>
-      <div style="flex:2"><label>Corporation</label><select id="lp-corp" style="width:100%">${corpOpts}</select></div>
+      <div style="flex:1.5"><label>${t('origin')} System</label><input type="text" id="lp-sys" value="${currentOrigin}" placeholder="e.g. Jita" style="width:100%"></div>
+      <div style="flex:1.5"><label>${t('faction')}</label><select id="lp-faction" style="width:100%"><option value="">${t('allFactions')}</option>${factionOpts}</select></div>
+      <div style="flex:2"><label>${t('corporation')}</label><select id="lp-corp" style="width:100%">${corpOpts}</select></div>
       <div><label>Max Results</label><input type="number" id="lp-max" value="10" min="1" max="50" style="width:60px"></div>
-      <div style="display:flex;align-items:flex-end"><button class="btn accent" id="lp-search-btn">Search</button></div>
+      <div style="display:flex;align-items:flex-end"><button class="btn accent" id="lp-search-btn">${t('search')}</button></div>
     </div>`;
 
   // Faction → Corp cascade (only LP-store corps)
   const fEl = document.getElementById('lp-faction');
   const cEl = document.getElementById('lp-corp');
   fEl.addEventListener('change', () => {
-    cEl.innerHTML = '<option value="">All Corporations</option>' + buildLPCorpOpts(fEl.value);
+    cEl.innerHTML = '<option value="">' + t('allCorps') + '</option>' + buildLPCorpOpts(fEl.value);
   });
 
   m.body.innerHTML = '<div id="lp-results"></div>';
-  m.footer.innerHTML = '<span class="modal-status" id="lp-status">Enter system and select corporation</span><span class="modal-summary" id="lp-summary"></span><div style="margin-left:auto;display:flex;gap:6px"><button class="btn sm" id="lp-scan-btn" disabled>Scan Route</button><button class="btn sm" id="lp-preview-btn" disabled>Preview Path</button></div>';
+  m.footer.innerHTML = `<span class="modal-status" id="lp-status">${t('origin')} + ${t('corporation')}</span><span class="modal-summary" id="lp-summary"></span><div style="margin-left:auto;display:flex;gap:6px"><button class="btn sm" id="lp-scan-btn" disabled>${t('scanRoute')}</button><button class="btn sm" id="lp-preview-btn" disabled>${t('previewPath')}</button></div>`;
 
   let selectedResult = null;
 
@@ -3029,7 +3287,7 @@ function openNearestLP() {
 
     const el = document.getElementById('lp-results');
     if (results.length === 0) {
-      el.innerHTML = '<div style="padding:20px;color:var(--text-dim);text-align:center">No LP stores found within 50 jumps</div>';
+      el.innerHTML = '<div style="padding:20px;color:var(--text-dim);text-align:center">' + t('noLPStores') + '</div>';
       document.getElementById('lp-summary').textContent = '';
       return;
     }
@@ -3037,8 +3295,8 @@ function openNearestLP() {
     const shown = results.slice(0, maxResults);
     const showCorp = !corpId; // show corp column when not filtering by single corp
     let html = `<table class="modal-table"><thead><tr>
-      <th class="col-num">#</th><th class="col-jumps">Jumps</th><th>System</th>
-      <th class="col-sec">Sec</th>${showCorp ? '<th>Corporation</th>' : ''}<th>Station</th></tr></thead><tbody>`;
+      <th class="col-num">#</th><th class="col-jumps">${t('jumps')}</th><th>${t('system')}</th>
+      <th class="col-sec">${t('sec')}</th>${showCorp ? '<th>' + t('corporation') + '</th>' : ''}<th>${t('station')}</th></tr></thead><tbody>`;
     for (let i=0; i<shown.length; i++) {
       const r = shown[i];
       const secStr = r.sec >= 0 ? r.sec.toFixed(1) : r.sec.toFixed(2);
@@ -3056,7 +3314,7 @@ function openNearestLP() {
     selectedResult = null;
     document.getElementById('lp-scan-btn').disabled = true;
     document.getElementById('lp-preview-btn').disabled = true;
-    document.getElementById('lp-summary').textContent = `${results.length} LP stores found (showing ${shown.length})`;
+    document.getElementById('lp-summary').textContent = t('lpResultsCount', {n: results.length, m: shown.length});
   }
 
   window.selectLPRow = function(tr, idx) {
@@ -3073,7 +3331,7 @@ function openNearestLP() {
 // Intelligence — Mission Hub Discovery
 // ═══════════════════════════════════════════════════════════════════════════
 function openMissionHub() {
-  if (!SDE || !missionHubs) { setStatus('SDE data not loaded yet', 'yellow'); return; }
+  if (!SDE || !missionHubs) { setStatus(t('sdeNotLoaded'), 'yellow'); return; }
 
   const m = openModal('Mission Hub Discovery', 'wide');
 
@@ -3084,26 +3342,26 @@ function openMissionHub() {
   const typeOpts = Object.entries(AGENT_TYPE_NAMES).filter(([k])=>k>=2).map(([k,v])=>`<option value="${k}">${v}</option>`).join('');
   const divOpts = Object.entries(AGENT_DIVISION_NAMES).map(([k,v])=>`<option value="${k}">${v}</option>`).join('');
   const factionOpts = _buildFactionOpts();
-  const corpOpts = '<option value="">All Corporations</option>' + _buildCorpOptsForFaction('');
+  const corpOpts = '<option value="">' + t('allCorps') + '</option>' + _buildCorpOptsForFaction('');
 
   m.filters.innerHTML = `
     <div class="mf-row">
-      <div style="flex:1"><label>Region</label><select id="mh-region"><option value="">All Regions</option>${regionOpts}</select></div>
-      <div style="flex:1"><label>Constellation</label><select id="mh-const"><option value="">All Constellations</option></select></div>
-      <div><label>Min Level</label><select id="mh-min-level"><option>4</option><option>3</option><option>5</option></select></div>
-      <div><label>Agent Type</label><select id="mh-type"><option value="">All Mission Types</option>${typeOpts}</select></div>
-      <div style="flex:0;display:flex;align-items:flex-end;padding-bottom:2px"><label class="modal-check"><input type="checkbox" id="mh-exclude-loc" checked> Exclude Locators</label></div>
+      <div style="flex:1"><label>Region</label><select id="mh-region"><option value="">${t('allRegions')}</option>${regionOpts}</select></div>
+      <div style="flex:1"><label>Constellation</label><select id="mh-const"><option value="">${t('allConst')}</option></select></div>
+      <div><label>${t('minLevel')}</label><select id="mh-min-level"><option>4</option><option>3</option><option>5</option></select></div>
+      <div><label>${t('agentType')}</label><select id="mh-type"><option value="">${t('allMissionTypes')}</option>${typeOpts}</select></div>
+      <div style="flex:0;display:flex;align-items:flex-end;padding-bottom:2px"><label class="modal-check"><input type="checkbox" id="mh-exclude-loc" checked> ${t('excludeLocators')}</label></div>
     </div>
     <div class="mf-row">
-      <div><label>Faction</label><select id="mh-faction"><option value="">All Factions</option>${factionOpts}</select></div>
-      <div style="flex:1.5"><label>Corporation</label><select id="mh-corp">${corpOpts}</select></div>
-      <div><label>Division</label><select id="mh-div"><option value="">All Divisions</option>${divOpts}</select></div>
+      <div><label>${t('faction')}</label><select id="mh-faction"><option value="">${t('allFactions')}</option>${factionOpts}</select></div>
+      <div style="flex:1.5"><label>${t('corporation')}</label><select id="mh-corp">${corpOpts}</select></div>
+      <div><label>${t('division')}</label><select id="mh-div"><option value="">${t('allDivisions')}</option>${divOpts}</select></div>
     </div>`;
   _bindFactionCorpCascade('mh-faction', 'mh-corp');
   _bindRegionConstCascade('mh-region', 'mh-const', mhRcMap);
 
   m.body.innerHTML = '<div id="mh-results"></div>';
-  m.footer.innerHTML = '<span class="modal-summary" id="mh-summary"></span><span class="modal-status" id="mh-status"></span><div style="margin-left:auto;display:flex;gap:6px"><button class="btn accent" id="mh-search-btn">Search</button><button class="btn sm" onclick="closeModal()">Close</button></div>';
+  m.footer.innerHTML = `<span class="modal-summary" id="mh-summary"></span><span class="modal-status" id="mh-status"></span><div style="margin-left:auto;display:flex;gap:6px"><button class="btn accent" id="mh-search-btn">${t('search')}</button><button class="btn sm" onclick="closeModal()">${t('close')}</button></div>`;
 
   function renderHubs() {
     const minLevel = parseInt(document.getElementById('mh-min-level').value);
@@ -3176,9 +3434,9 @@ function openMissionHub() {
 
     const el = document.getElementById('mh-results');
     let html = `<table class="modal-table"><thead><tr>
-      <th class="col-num">#</th><th>System</th><th class="col-sec">Security</th><th>Region</th><th>Constellation</th>
+      <th class="col-num">#</th><th>${t('system')}</th><th class="col-sec">${t('security')}</th><th>Region</th><th>Constellation</th>
       <th class="col-num">L3</th><th class="col-num">L4</th><th class="col-num">L5</th>
-      <th class="col-num">Total</th><th>Divisions</th><th>Factions</th><th>Corps Detail</th></tr></thead><tbody>`;
+      <th class="col-num">Total</th><th>${t('division')}s</th><th>${t('faction')}s</th><th>${t('corps')} Detail</th></tr></thead><tbody>`;
     for (let i=0; i<hubs.length; i++) {
       const h = hubs[i];
       const sysRec = systems[h.sysId];
@@ -3243,7 +3501,7 @@ function openMissionHub() {
         corpsDetail = parts.join('  ');
       }
 
-      html += `<tr class="mh-row" onclick="toggleHubDetail(${i})" title="Click to expand agents detail">
+      html += `<tr class="mh-row" onclick="toggleHubDetail(${i})" title="${t('mhClickExpand')}">
         <td class="col-num">${i+1}</td><td>${nm.en||'?'}</td><td class="col-sec">${secStr}</td>
         <td>${rname}</td><td>${cname}</td>
         <td class="col-num">${l3}</td><td class="col-num">${l4}</td><td class="col-num">${l5}</td>
@@ -3294,7 +3552,7 @@ function openMissionHub() {
     const totalSystems = hubs.length;
     const topSys = hubs.length > 0 ? (systems[hubs[0].sysId]?.name?.en || '?') : '?';
     const topAgents = hubs.length > 0 ? (hubs[0]._filteredAgents !== undefined ? hubs[0]._filteredAgents : hubs[0].agents) : 0;
-    document.getElementById('mh-summary').textContent = `Found ${totalSystems} systems with L${minLevel}+ mission agents. Top: ${topSys} (${topAgents} agents)`;
+    document.getElementById('mh-summary').textContent = t('mhFound', {n: totalSystems, lv: minLevel, sys: topSys, agents: topAgents});
     document.getElementById('mh-status').textContent = '';
   }
 
@@ -3328,15 +3586,15 @@ function _sdeCorpName(cid) {
 // Intelligence — Mission Query (dialog with search + detail, matching desktop)
 // ═══════════════════════════════════════════════════════════════════════════
 function openMissionQuery() {
-  if (!SDE) { setStatus('SDE data not loaded yet', 'yellow'); return; }
+  if (!SDE) { setStatus(t('sdeNotLoaded'), 'yellow'); return; }
   if (!missionsData) {
     // Lazy load: show loading modal, fetch data, then open
     const m2 = openModal('Mission Query', 'medium');
-    m2.body.innerHTML = '<div style="padding:40px;text-align:center;color:var(--text-dim)">Loading missions data (12 MB)...</div>';
+    m2.body.innerHTML = '<div style="padding:40px;text-align:center;color:var(--text-dim)">' + t('mqLoading') + '</div>';
     _ensureMissionsData().then(ok => {
       closeModal();
       if (ok) openMissionQuery();
-      else setStatus('Failed to load missions data', 'red');
+      else setStatus(t('mqFailed'), 'red');
     });
     return;
   }
@@ -3345,18 +3603,18 @@ function openMissionQuery() {
 
   m.filters.innerHTML = `
     <div class="mf-row">
-      <div style="flex:2"><label>Mission Name</label><input type="text" id="mq-name" placeholder="e.g. blockade, worlds collide, 牌匾…" style="width:100%"></div>
+      <div style="flex:2"><label>${t('mqName')}</label><input type="text" id="mq-name" placeholder="${t('mqPlaceholder')}" style="width:100%"></div>
       <div style="display:flex;align-items:flex-end;gap:8px">
         <label style="display:flex;align-items:center;gap:3px;cursor:pointer"><input type="radio" name="mq-lang" value="zh" checked> 中文</label>
         <label style="display:flex;align-items:center;gap:3px;cursor:pointer"><input type="radio" name="mq-lang" value="en"> English</label>
       </div>
-      <div style="display:flex;align-items:flex-end"><button class="btn accent" id="mq-search-btn">Search</button></div>
+      <div style="display:flex;align-items:flex-end"><button class="btn accent" id="mq-search-btn">${t('search')}</button></div>
     </div>`;
 
   m.body.innerHTML = `
     <div class="split-top" id="mq-list" style="overflow:auto"></div>
     <div class="split-bottom" id="mq-detail" style="min-height:120px;white-space:pre-wrap;font-family:Consolas,monospace;font-size:11px;line-height:1.5;padding:8px">
-      选择一个任务查看详情</div>`;
+      ${t('mqSelectHint')}</div>`;
   m.footer.innerHTML = '<span class="modal-status" id="mq-status"></span><span class="modal-summary" id="mq-summary"></span>';
 
   document.getElementById('mq-search-btn').onclick = doMissionSearch;
@@ -3381,7 +3639,7 @@ function doMissionSearch() {
   const lang = _mqGetLang();
   if (!query || !missionsData) return;
 
-  document.getElementById('mq-status').textContent = 'Searching…';
+  document.getElementById('mq-status').textContent = t('searching') || 'Searching…';
 
   const nameIndex = missionsData.missionsByName[lang] || {};
   const missionIds = [];
@@ -3399,7 +3657,7 @@ function doMissionSearch() {
 
   const el = document.getElementById('mq-list');
   if (missionIds.length === 0) {
-    el.innerHTML = '<div style="padding:20px;color:var(--text-dim);text-align:center">没有找到匹配的任务。试试: blockade, worlds collide, 牌匾, delivery 等。</div>';
+    el.innerHTML = '<div style="padding:20px;color:var(--text-dim);text-align:center">' + t('mqNoMatch') + '</div>';
     document.getElementById('mq-summary').textContent = '';
     document.getElementById('mq-detail').textContent = '';
     return;
@@ -3412,7 +3670,7 @@ function doMissionSearch() {
     return na.localeCompare(nb);
   });
 
-  let html = '<table class="modal-table"><thead><tr><th class="col-num">#</th><th>ID</th><th>Name</th><th>Type</th><th>Faction</th><th>Corporation</th></tr></thead><tbody>';
+  let html = `<table class="modal-table"><thead><tr><th class="col-num">#</th><th>ID</th><th>${t('mqName')}</th><th>${t('type')}</th><th>${t('faction')}</th><th>${t('corporation')}</th></tr></thead><tbody>`;
   const shown = missions.slice(0, 200);
   for (let i=0; i<shown.length; i++) {
     const m = shown[i];
@@ -3427,28 +3685,28 @@ function doMissionSearch() {
   html += '</tbody></table>';
   el.innerHTML = html;
 
-  const totalText = missions.length >= 200 ? ` (showing first 200)` : '';
-  document.getElementById('mq-summary').textContent = `Found ${missions.length} mission(s)${totalText}`;
+  const totalText = missions.length >= 200 ? t('mqShowingFirst') : '';
+  document.getElementById('mq-summary').textContent = t('mqFound', {n: missions.length}) + totalText;
 
   // Show detail for first
   if (shown.length > 0) showMissionDetail(shown[0].id);
 }
 
-// Dialogue key → friendly label mapping (matching desktop order)
+// Dialogue key → i18n key mapping (matching desktop order)
 const _MQ_DLG_LABELS = {
-  'messages.mission.briefing':              'Briefing',
-  'messages.mission.offered.agentsays':     'Agent (offered)',
-  'messages.mission.accept.charsays':       'You (accept)',
-  'messages.mission.accepted.agentsays':    'Agent (accepted)',
-  'messages.mission.decline.charsays':      'You (decline)',
-  'messages.mission.declined.agentsays':    'Agent (declined)',
-  'messages.mission.complete.charsays':     'You (complete)',
-  'messages.mission.completed.agentsays':   'Agent (completed)',
-  'messages.mission.ask.charsays':          'You (ask)',
-  'messages.mission.quit.charsays':         'You (quit)',
-  'messages.mission.quitted.agentsays':     'Agent (quitted)',
-  'messages.mission.extrainfo.header':      'Extra Info Header',
-  'messages.mission.extrainfo.body':        'Extra Info',
+  'messages.mission.briefing':              'dlgBriefing',
+  'messages.mission.offered.agentsays':     'dlgAgentOffered',
+  'messages.mission.accept.charsays':       'dlgYouAccept',
+  'messages.mission.accepted.agentsays':    'dlgAgentAccepted',
+  'messages.mission.decline.charsays':      'dlgYouDecline',
+  'messages.mission.declined.agentsays':    'dlgAgentDeclined',
+  'messages.mission.complete.charsays':     'dlgYouComplete',
+  'messages.mission.completed.agentsays':   'dlgAgentCompleted',
+  'messages.mission.ask.charsays':          'dlgYouAsk',
+  'messages.mission.quit.charsays':         'dlgYouQuit',
+  'messages.mission.quitted.agentsays':     'dlgAgentQuitted',
+  'messages.mission.extrainfo.header':      'dlgExtraHeader',
+  'messages.mission.extrainfo.body':        'dlgExtraBody',
 };
 
 const _MQ_DLG_ORDER = [
@@ -3485,44 +3743,44 @@ function showMissionDetail(mid) {
 
   // Type
   const typeStr = mission.killMission ? 'Combat' : mission.courierMission ? 'Courier' : mission.epicArcMission ? 'Epic Arc' : 'Other';
-  lines.push(`Type: ${typeStr}`);
+  lines.push(`${t('mdType')}: ${typeStr}`);
 
   // Faction & Corporation
   if (mission.factionID) {
-    lines.push(`Faction: ${_sdeFactionName(mission.factionID)}`);
+    lines.push(`${t('faction')}: ${_sdeFactionName(mission.factionID)}`);
   }
   if (mission.corporationID) {
     const cn = SDE.corpsById[mission.corporationID];
     const cz = cn?.nameZh || '';
-    lines.push(`Corporation: ${cn?.name || mission.corporationID}${cz ? ' ('+cz+')' : ''}`);
+    lines.push(`${t('corporation')}: ${cn?.name || mission.corporationID}${cz ? ' ('+cz+')' : ''}`);
   }
 
   // ── Objectives ──
   lines.push('');
-  lines.push('─── Objectives ───');
+  lines.push(`─── ${t('mdObjectives')} ───`);
   const km = mission.killMission;
   if (km) {
-    lines.push(`  Kill objective (dungeon ${km.dungeonID || '?'})`);
+    lines.push(`  ${t('mdKillObj', {id: km.dungeonID || '?'})}`);
   }
   const cm = mission.courierMission;
   if (cm) {
     const qty = cm.objectiveQuantity || '?';
     const tid = cm.objectiveTypeID;
     const tname = tid ? (_getTypeName(tid)) : '?';
-    lines.push(`  Courier: ${qty}x ${tname}`);
+    lines.push(`  ${t('mdCourierObj', {qty, item: tname})}`);
   }
 
   // ── Rewards ──
   const mr = mission.missionRewards;
   if (mr) {
     lines.push('');
-    lines.push('─── Rewards ───');
+    lines.push(`─── ${t('mdRewards')} ───`);
     const rew = mr.reward;
     if (rew) {
       const rtid = rew.rewardTypeID;
       const rqty = rew.rewardQuantity || '?';
       const rname = rtid ? (_getTypeName(rtid)) : '?';
-      lines.push(`  Reward: ${rqty}x ${rname}`);
+      lines.push(`  ${t('mdReward')}: ${rqty}x ${rname}`);
     }
     const bon = mr.bonusReward;
     if (bon) {
@@ -3530,19 +3788,19 @@ function showMissionDetail(mid) {
       const bqty = bon.rewardQuantity || '?';
       const bname = btid ? (_getTypeName(btid)) : '?';
       const btime = mr.bonusTimeInterval;
-      const tstr = btime ? ` (within ${btime}s)` : '';
-      lines.push(`  Bonus: ${bqty}x ${bname}${tstr}`);
+      const tstr = btime ? ` (${t('mdWithin', {s: btime})})` : '';
+      lines.push(`  ${t('mdBonus')}: ${bqty}x ${bname}${tstr}`);
     }
   }
   if (mission.hasStandingRewards) {
-    lines.push('  Standing rewards: Yes');
+    lines.push(`  ${t('mdStandingRewards')}`);
   }
 
   // ── Dialogues ──
   const msgs = mission.messages || [];
   if (msgs.length > 0) {
     lines.push('');
-    lines.push('─── Dialogues ───');
+    lines.push(`─── ${t('mdDialogues')} ───`);
 
     // Build map from _key
     const msgMap = {};
@@ -3559,7 +3817,7 @@ function showMissionDetail(mid) {
       // Clean HTML tags
       const clean = txt.replace(/<[^>]+>/g, '').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&').replace(/&nbsp;/g, ' ').trim();
       if (!clean) continue;
-      const label = _MQ_DLG_LABELS[mkey] || mkey;
+      const label = t(_MQ_DLG_LABELS[mkey] || mkey);
       lines.push('');
       lines.push(`  ${label}:`);
       // Truncate very long text (matching desktop 500 char limit)
@@ -3592,25 +3850,25 @@ let lpOffersLoading = false;
 let lpOffersSavedAt = null;
 
 function openLPStoreFinder() {
-  if (!SDE) { setStatus('SDE data not loaded yet', 'yellow'); return; }
+  if (!SDE) { setStatus(t('sdeNotLoaded'), 'yellow'); return; }
 
-  const m = openModal('LP Store Finder — Item → Corporation Lookup', 'wide');
+  const m = openModal(t('lpfTitle'), 'wide');
 
   m.filters.innerHTML = `
     <div class="mf-row">
-      <div style="flex:2"><label>Item Name</label><input type="text" id="lpf-name" placeholder="e.g. Navy Cap Booster 800, Imperial Navy Slicer, 帝国海军切割机" style="width:100%"></div>
-      <div style="display:flex;align-items:flex-end"><button class="btn accent" id="lpf-search-btn">Search</button></div>
-      <div style="display:flex;align-items:flex-end"><button class="btn" id="lpf-refresh-btn">Refresh</button></div>
+      <div style="flex:2"><label>${t('lpfItemName')}</label><input type="text" id="lpf-name" placeholder="${t('lpfPlaceholder')}" style="width:100%"></div>
+      <div style="display:flex;align-items:flex-end"><button class="btn accent" id="lpf-search-btn">${t('search')}</button></div>
+      <div style="display:flex;align-items:flex-end"><button class="btn" id="lpf-refresh-btn">${t('lpfRefresh')}</button></div>
     </div>
     <div class="mf-row">
-      <div style="flex:1"><label>Faction</label><select id="lpf-faction" style="width:100%"><option value="">All Factions</option></select></div>
-      <div style="flex:1"><label>Corporation</label><select id="lpf-corp" style="width:100%"><option value="">All Corps</option></select></div>
+      <div style="flex:1"><label>${t('faction')}</label><select id="lpf-faction" style="width:100%"><option value="">${t('allFactions')}</option></select></div>
+      <div style="flex:1"><label>${t('corporation')}</label><select id="lpf-corp" style="width:100%"><option value="">${t('lpfAllCorps')}</option></select></div>
     </div>`;
 
   m.body.innerHTML = `
     <div class="split-top" id="lpf-results" style="overflow:auto"></div>
     <div class="split-bottom" id="lpf-detail" style="min-height:100px;white-space:pre-wrap;font-family:Consolas,monospace;font-size:11px;line-height:1.5;padding:8px">
-      Search for an item to see LP offers</div>`;
+      ${t('lpfSearchHint')}</div>`;
   m.footer.innerHTML = '<span class="modal-status" id="lpf-status"></span><span class="modal-summary" id="lpf-summary"></span>';
 
   document.getElementById('lpf-search-btn').onclick = doLPFSearch;
@@ -3620,7 +3878,7 @@ function openLPStoreFinder() {
 
   // Auto-load cache if not already loaded
   if (lpOffersLoaded) {
-    document.getElementById('lpf-status').textContent = `LP data loaded (${Object.keys(lpOffersIndex).length} items from cache, saved: ${lpOffersSavedAt || '?'})`;
+    document.getElementById('lpf-status').textContent = t('lpfLPCacheLoaded', {n: Object.keys(lpOffersIndex).length, date: lpOffersSavedAt || '?'});
     _initLPFilters();
   } else {
     doLoadLPData();
@@ -3637,14 +3895,14 @@ async function doRefreshLPData() {
 async function doLoadLPData() {
   if (lpOffersLoading) return;
   if (lpOffersLoaded) {
-    document.getElementById('lpf-status').textContent = `Already loaded (${Object.keys(lpOffersIndex).length} items)`;
+    document.getElementById('lpf-status').textContent = t('lpfAlreadyLoaded', {n: Object.keys(lpOffersIndex).length});
     return;
   }
 
   lpOffersLoading = true;
   document.getElementById('lpf-refresh-btn').disabled = true;
-  document.getElementById('lpf-status').textContent = 'Loading LP offers from local cache…';
-  _setLoadProgress(30, 'Loading LP offers cache (7 MB)...');
+  document.getElementById('lpf-status').textContent = t('lpfLoadingCache');
+  _setLoadProgress(30, t('lpfLoadingCache'));
 
   try {
     const resp = await fetch('./lp_offers_cache.json');
@@ -3657,12 +3915,12 @@ async function doLoadLPData() {
     lpOffersSavedAt = cache.saved_at || '?';
 
     const totalOffers = Object.values(lpOffersIndex).reduce((s, arr) => s + arr.length, 0);
-    document.getElementById('lpf-status').textContent = `Loaded ${totalOffers.toLocaleString()} offers from cache (saved: ${cache.saved_at || '?'})`;
-    document.getElementById('lpf-summary').textContent = `${Object.keys(lpOffersIndex).length} unique items available`;
+    document.getElementById('lpf-status').textContent = t('lpfLoaded', {n: totalOffers.toLocaleString(), date: cache.saved_at || '?'});
+    document.getElementById('lpf-summary').textContent = t('lpfItemsAvail', {n: Object.keys(lpOffersIndex).length});
     _hideLoadBar();
     _initLPFilters();
   } catch (e) {
-    document.getElementById('lpf-status').textContent = `Error loading cache: ${e.message}`;
+    document.getElementById('lpf-status').textContent = t('lpfLoadError', {msg: e.message});
   } finally {
     lpOffersLoading = false;
     document.getElementById('lpf-refresh-btn').disabled = false;
@@ -3739,20 +3997,20 @@ function doLPFSearch() {
 
   // Need either a search term or a filter
   if ((!name || name.length < 2) && !filterFaction && !filterCorp) {
-    document.getElementById('lpf-status').textContent = 'Type at least 2 characters, or select a faction/corp filter';
+    document.getElementById('lpf-status').textContent = t('lpfMinChars');
     return;
   }
 
   if (!lpOffersLoaded) {
     if (lpOffersLoading) {
-      document.getElementById('lpf-status').textContent = 'LP data is loading, please wait…';
+      document.getElementById('lpf-status').textContent = t('lpfDataLoading');
     } else {
-      document.getElementById('lpf-status').textContent = 'LP data not loaded — click [Refresh] to load';
+      document.getElementById('lpf-status').textContent = t('lpfNotLoaded');
     }
     return;
   }
 
-  document.getElementById('lpf-status').textContent = 'Searching…';
+  document.getElementById('lpf-status').textContent = t('lpfSearching');
 
   let matchedTids = [];
 
@@ -3784,8 +4042,8 @@ function doLPFSearch() {
   }
 
   if (matchedTids.length === 0) {
-    const hint = name ? `matching "${name}"` : `for the selected ${filterCorp ? 'corporation' : 'faction'}`;
-    document.getElementById('lpf-results').innerHTML = `<div style="padding:20px;color:var(--text-dim);text-align:center">No LP offers found ${hint}</div>`;
+    const hint = name ? t('lpfMatching', {name}) : (filterCorp ? t('lpfForCorp') : t('lpfForFaction'));
+    document.getElementById('lpf-results').innerHTML = `<div style="padding:20px;color:var(--text-dim);text-align:center">${t('lpfNoOffers')} ${hint}</div>`;
     document.getElementById('lpf-status').textContent = '';
     document.getElementById('lpf-summary').textContent = '';
     return;
@@ -3821,9 +4079,9 @@ function doLPFSearch() {
 
   const el = document.getElementById('lpf-results');
   let html = `<table class="modal-table"><thead><tr>
-    <th>Item</th><th>Corporation</th><th style="text-align:right">LP Cost</th>
-    <th style="text-align:right">ISK Cost</th><th>Required Items</th>
-    <th class="col-num">Qty</th></tr></thead><tbody>`;
+    <th>${t('item')}</th><th>${t('corporation')}</th><th style="text-align:right">${t('lpfTableLPCost') || 'LP Cost'}</th>
+    <th style="text-align:right">${t('lpfTableISKCost') || 'ISK Cost'}</th><th>${t('lpfTableRequired') || 'Required Items'}</th>
+    <th class="col-num">${t('lpfTableQty') || 'Qty'}</th></tr></thead><tbody>`;
   for (let i = 0; i < rows.length; i++) {
     const r = rows[i];
     const reqStr = r.requiredItems.length > 0
@@ -3843,9 +4101,9 @@ function doLPFSearch() {
   el.innerHTML = html;
 
   document.getElementById('lpf-status').textContent = '';
-  const filterStr = filterCorp ? ` (filtered: ${lpOffersCorpNames?.[filterCorp] || 'Corp '+filterCorp})` : filterFaction ? ` (filtered: ${SDE.factionsById[+filterFaction]?.name?.en || 'Faction'})` : '';
-  const truncNote = matchedTids.length > limit ? ` (showing first ${limit})` : '';
-  document.getElementById('lpf-summary').textContent = `${rows.length} offers across ${matchedTids.length} items${filterStr}${truncNote}`;
+  const filterStr = filterCorp ? t('lpfFiltered', {name: lpOffersCorpNames?.[filterCorp] || 'Corp '+filterCorp}) : filterFaction ? t('lpfFiltered', {name: SDE.factionsById[+filterFaction]?.name?.en || 'Faction'}) : '';
+  const truncNote = matchedTids.length > limit ? t('lpfShowingFirst', {n: limit}) : '';
+  document.getElementById('lpf-summary').textContent = t('lpfOffersAcross', {offers: rows.length, items: matchedTids.length}) + filterStr + truncNote;
 
   // Show detail for first row
   if (rows.length > 0) {
@@ -3867,20 +4125,20 @@ function showLPFDetailByIdx(idx) {
   if (!r) return;
 
   let detail = `═══ ${r.typeName} ═══\n`;
-  detail += `Corporation: ${r.corpName}\n`;
-  detail += `LP Cost:     ${r.lpCost.toLocaleString()}\n`;
-  detail += `ISK Cost:    ${formatISK(r.iskCost)}\n`;
-  detail += `Quantity:    ${r.quantity}\n`;
+  detail += `${t('corporation')}: ${r.corpName}\n`;
+  detail += `LP ${t('lpfTableLPCost') || 'Cost'}:     ${r.lpCost.toLocaleString()}\n`;
+  detail += `ISK ${t('lpfTableISKCost') || 'Cost'}:    ${formatISK(r.iskCost)}\n`;
+  detail += `${t('lpfTableQty') || 'Quantity'}:    ${r.quantity}\n`;
 
   if (r.requiredItems.length > 0) {
-    detail += `\n── Required Items ──\n`;
+    detail += `\n── ${t('lpfReqItems')} ──\n`;
     for (const ri of r.requiredItems) {
       const rnm = resolveTypeName(ri.type_id);
       detail += `  ${ri.quantity.toLocaleString().padStart(8)} x ${rnm}\n`;
     }
   } else {
-    detail += `\n── Required Items ──\n`;
-    detail += `  None (LP + ISK only)\n`;
+    detail += `\n── ${t('lpfReqItems')} ──\n`;
+    detail += `  ${t('lpfNone')}\n`;
   }
 
   document.getElementById('lpf-detail').textContent = detail;
