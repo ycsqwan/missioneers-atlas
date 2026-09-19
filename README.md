@@ -47,7 +47,6 @@ A comprehensive PvE mission planning and route analysis tool for EVE Online — 
 - EVE SDE (Static Data Export) for static data
 - EVE ESI API for real-time jump / activity data
 - zKillboard API for kill statistics
-- Google Analytics 4 (measurement only, no cookies)
 
 ---
 
@@ -64,20 +63,6 @@ A comprehensive PvE mission planning and route analysis tool for EVE Online — 
 | `mission_hubs.json` | Top 200 mission-dense systems | 16 KB |
 | `agent_types.json` | Agent type definitions | 284 B |
 | `agent_divisions.json` | Agent division definitions | 698 B |
-
----
-
-## Development
-
-This is a pure static site — no build step required. Just serve the directory:
-
-```bash
-# Any static server works
-npx serve .
-python -m http.server 8000
-```
-
-Data is pre-built from EVE SDE JSONL files using `build.mjs` (in a separate private repo).
 
 ---
 
