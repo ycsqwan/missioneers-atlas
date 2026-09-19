@@ -3394,12 +3394,9 @@ function openMissionHub() {
       hubs = hubs.filter(h => systems[h.sysId]?.constellationID === +constFilter);
     }
 
-    // Apply min level filter
-    if (minLevel >= 1 && minLevel <= 5) hubs = hubs.filter(h => h.byLevel[minLevel - 1] > 0);
-
-    // mission_hubs.json now contains ALL systems with agents — no runtime expansion needed
-    // Re-count agents per hub
-    if (typeFilter || divFilter || factionFilter || corpFilter || excludeLoc) {
+    // Re-count agents per hub (must run BEFORE minLevel so level checks use filtered data)
+    const hasAgentFilter = typeFilter || divFilter || factionFilter || corpFilter || excludeLoc;
+    if (hasAgentFilter || minLevel >= 2) {
       hubs = hubs.map(h => {
         const stns = systems[h.sysId]?.stations || [];
         const divSet = new Set();
@@ -3431,6 +3428,14 @@ function openMissionHub() {
         return { ...h, _filteredAgents: count, _filteredByLevel: levelCounts, _divs: divSet, _facs: facSet, _corpCounts: corpCounts };
       }).filter(h => h._filteredAgents > 0);
       hubs.sort((a,b) => b._filteredAgents - a._filteredAgents);
+    }
+
+    // Apply min level filter AFTER re-count (uses filtered level data when available)
+    if (minLevel >= 1 && minLevel <= 5) {
+      hubs = hubs.filter(h => {
+        const bl = h._filteredByLevel || h.byLevel;
+        return bl[minLevel - 1] > 0;
+      });
     }
 
     hubs = hubs.slice(0, 200);
