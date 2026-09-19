@@ -440,6 +440,9 @@ select{cursor:pointer}
               <button class="btn accent" onclick="doRouteScan()" data-i18n="routeScan">Route Scan</button>
               <button class="btn" onclick="doOverview()" data-i18n="overview">Overview</button>
             </div>
+            <div class="btn-row">
+              <button class="btn" onclick="clearRoutePath()" data-i18n="resetRoute">Reset Route</button>
+            </div>
             <div class="progress-bar" id="scan-progress"><div class="fill" id="scan-progress-fill"></div></div>
             <div id="scan-status" style="font-size:11px;color:var(--text-dim);margin-top:6px"></div>
           </div>
@@ -616,6 +619,7 @@ const I18N = {
     stargateLines: 'Stargate Lines',
     sysNames: 'System Names',
     resetView: '⟲ Reset View',
+    resetRoute: 'Reset Route',
     fitAll: '⊡ Fit All',
     dataStatus: 'Data Status',
     loading: 'Loading…',
@@ -655,6 +659,7 @@ const I18N = {
     stargateLines: '星门连线',
     sysNames: '星系名称',
     resetView: '⟲ 重置视角',
+    resetRoute: '重置路线',
     fitAll: '⊡ 全部显示',
     dataStatus: '数据状态',
     loading: '加载中…',
@@ -743,6 +748,7 @@ let view = { cx: 0, cy: 0, scale: 1 };
 let highlight = null;
 let hoverSys = null;
 let filterRid = null;
+let routePath = null;  // array of system IDs for route highlight
 
 // ═══════════════════════════════════════════════════════════════════════════
 // Init
@@ -1114,6 +1120,47 @@ function draw() {
     ctx.textAlign = 'left';
   }
 
+  // Route path highlight
+  if (routePath && routePath.length >= 2) {
+    // Draw route edges (thick dashed lines)
+    ctx.strokeStyle = 'rgba(255,200,50,0.85)';
+    ctx.lineWidth = 3;
+    ctx.setLineDash([8, 4]);
+    ctx.beginPath();
+    for (let i = 0; i < routePath.length - 1; i++) {
+      const a = sysIdx(routePath[i]), b = sysIdx(routePath[i+1]);
+      if (a < 0 || b < 0) continue;
+      ctx.moveTo(toSx(sysX[a]), toSy(sysY[a]));
+      ctx.lineTo(toSx(sysX[b]), toSy(sysY[b]));
+    }
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    // Draw waypoint dots
+    for (let i = 0; i < routePath.length; i++) {
+      const idx = sysIdx(routePath[i]);
+      if (idx < 0) continue;
+      const sx = toSx(sysX[idx]), sy = toSy(sysY[idx]);
+      const isEnd = (i === 0 || i === routePath.length - 1);
+      const r = isEnd ? dotBase * 2.5 : dotBase * 1.8;
+      // Glow
+      const grad = ctx.createRadialGradient(sx, sy, 0, sx, sy, r * 3);
+      grad.addColorStop(0, isEnd ? 'rgba(255,200,50,0.5)' : 'rgba(255,200,50,0.3)');
+      grad.addColorStop(1, 'rgba(255,200,50,0)');
+      ctx.fillStyle = grad;
+      ctx.beginPath(); ctx.arc(sx, sy, r * 3, 0, Math.PI * 2); ctx.fill();
+      // Core
+      ctx.fillStyle = isEnd ? 'rgba(255,220,80,1)' : 'rgba(255,200,50,0.9)';
+      ctx.beginPath(); ctx.arc(sx, sy, r, 0, Math.PI * 2); ctx.fill();
+      // Label
+      if (showNames && sc > 3e-17) {
+        ctx.fillStyle = 'rgba(255,220,80,0.9)';
+        ctx.font = 'bold 9px sans-serif';
+        ctx.fillText(sysNames[idx], sx + r + 3, sy + 3);
+      }
+    }
+  }
+
   // Highlight ring
   if (highlight !== null) {
     const hi = sysIdx(highlight);
@@ -1458,7 +1505,15 @@ function resetView() {
   filterRid=null;
   document.getElementById('sel-region').value='';
   highlight=null;
+  routePath=null;
   fitAll();
+}
+
+function clearRoutePath() {
+  routePath = null;
+  highlight = null;
+  requestRedraw();
+  setStatus('Route cleared', 'green');
 }
 
 function fitRegion(name) {
@@ -2300,6 +2355,10 @@ async function doRouteScan() {
 
   setStatus(`Route: ${origVal} → ${destVal}…`, 'yellow');
 
+  // Clear previous route
+  routePath = null;
+  highlight = null;
+
   // BFS shortest path
   const parent = new Map();
   parent.set(origId, null);
@@ -2351,6 +2410,7 @@ async function doRouteScan() {
   }
 
   showReports('Route', report);
+  routePath = path;
   highlight = destId;
   fitToSet(path);
   showDetail(destId);
@@ -2369,6 +2429,7 @@ async function doFullScan() {
   if (!sid) { setStatus('System not found', 'red'); return; }
 
   setStatus(`Scanning ${origin} ${jumps}j…`, 'yellow');
+  routePath = null;
   const visited = bfsRange(sid, jumps);
 
   const [killsResp, jumpsResp] = await Promise.all([
@@ -2413,6 +2474,7 @@ async function doQuickScan() {
   if (!sid) { setStatus('System not found', 'red'); return; }
 
   setStatus(`Quick scan ${origin} ${jumps}j…`, 'yellow');
+  routePath = null;
   const visited = bfsRange(sid, jumps);
 
   const [killsResp, jumpsResp] = await Promise.all([
@@ -2445,6 +2507,7 @@ async function doOverview() {
   if (!sid) { setStatus('System not found', 'red'); return; }
 
   setStatus(`Overview ${origin}…`, 'yellow');
+  routePath = null;
   const visited = bfsRange(sid, jumps);
 
   const [killsResp, jumpsResp] = await Promise.all([
