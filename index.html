@@ -3434,7 +3434,7 @@ function openMissionHub() {
     if (minLevel >= 1 && minLevel <= 5) {
       hubs = hubs.filter(h => {
         const bl = h._filteredByLevel || h.byLevel;
-        return bl[minLevel - 1] > 0;
+        return bl.slice(minLevel - 1).some(c => c > 0);
       });
     }
 
