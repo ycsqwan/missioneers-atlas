@@ -3404,6 +3404,7 @@ function openMissionHub() {
         const divSet = new Set();
         const facSet = new Set();
         const corpCounts = {};
+        const levelCounts = [0,0,0,0,0];
         let count = 0;
         for (const st of stns) {
           const agents = SDE.agentsByLocation[st.id] || [];
@@ -3415,6 +3416,7 @@ function openMissionHub() {
             const cn = SDE.corpsById[a.corpID]?.name || '';
             if (corpFilter && a.corpID !== corpFilter) continue;
             count++;
+            if (a.level >= 1 && a.level <= 5) levelCounts[a.level - 1]++;
             const dn = AGENT_DIVISION_NAMES[a.divisionID] || '';
             if (dn) divSet.add(dn);
             const fid = SDE.corpsById[a.corpID]?.factionID;
