@@ -2941,7 +2941,7 @@ function _bindFactionCorpCascade(factionSelId, corpSelId) {
   const cEl = document.getElementById(corpSelId);
   if (fEl && cEl) {
     fEl.addEventListener('change', () => {
-      const opts = '<option value="">All Corporations</option>' + _buildCorpOptsForFaction(fEl.value);
+      const opts = '<option value="">' + t('allCorps') + '</option>' + _buildCorpOptsForFaction(fEl.value);
       cEl.innerHTML = opts;
     });
   }
@@ -2996,7 +2996,7 @@ function openAgentFinder() {
   const m = openModal('Agent Finder', 'wide');
 
   const factionOpts = _buildFactionOpts();
-  const corpOpts = '<option value="">All Corporations</option>' + _buildCorpOptsForFaction('');
+  const corpOpts = '<option value="">' + t('allCorps') + '</option>' + _buildCorpOptsForFaction('');
   const typeOpts = Object.entries(AGENT_TYPE_NAMES).filter(([k])=>k>=2).map(([k,v])=>`<option value="${k}">${v}</option>`).join('');
   const divOpts = Object.entries(AGENT_DIVISION_NAMES).map(([k,v])=>`<option value="${k}">${v}</option>`).join('');
 
@@ -3395,7 +3395,7 @@ function openMissionHub() {
     }
 
     // Apply min level filter
-    hubs = hubs.filter(h => h.byLevel[minLevel - 1] > 0);
+    if (minLevel >= 1 && minLevel <= 5) hubs = hubs.filter(h => h.byLevel[minLevel - 1] > 0);
 
     // If agent-level filters are active, re-count agents per hub
     if (typeFilter || divFilter || factionFilter || corpFilter || excludeLoc) {
@@ -3425,7 +3425,7 @@ function openMissionHub() {
             corpCounts[cn] = (corpCounts[cn] || 0) + 1;
           }
         }
-        return { ...h, _filteredAgents: count, _divs: divSet, _facs: facSet, _corpCounts: corpCounts };
+        return { ...h, _filteredAgents: count, _filteredByLevel: levelCounts, _divs: divSet, _facs: facSet, _corpCounts: corpCounts };
       }).filter(h => h._filteredAgents > 0);
       hubs.sort((a,b) => b._filteredAgents - a._filteredAgents);
     }
@@ -3445,7 +3445,8 @@ function openMissionHub() {
       const secStr = sec.toFixed(2);
       const rname = sysRec?.regionName?.en || sysRec?.regionName || '?';
       const cname = sysRec?.constellationName?.en || sysRec?.constellationName || '?';
-      const l3 = h.byLevel[2] || 0, l4 = h.byLevel[3] || 0, l5 = h.byLevel[4] || 0;
+      const bl = h._filteredByLevel || h.byLevel;
+      const l3 = bl[2] || 0, l4 = bl[3] || 0, l5 = bl[4] || 0;
       const total = h._filteredAgents !== undefined ? h._filteredAgents : h.agents;
 
       // Compute divisions, factions, corps detail from SDE if not pre-computed
