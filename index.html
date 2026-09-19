@@ -995,7 +995,7 @@ let sysIds=[], sysX=[], sysY=[], sysSec=[], sysRid=[], sysNames=[];
 let N = 0;
 let regionHulls = {}, regionLabelPos = {};
 let SDE = null;           // SDE data (agents, stations, corps, factions)
-let missionHubs = null;   // mission hub top-200
+let missionHubs = null;   // all systems with mission agents
 let missionsData = null;  // { missionsById, missionsByName }
 let typesNames = null;    // { typeID: { en, zh } }
 let agentTypesNames = null; // { typeID: name }
@@ -3382,7 +3382,7 @@ function openMissionHub() {
       }
     }
 
-    let hubs = missionHubs.slice(0, 200);
+    let hubs = missionHubs;
 
     // Apply region filter
     if (regionFilter) {
@@ -3397,7 +3397,8 @@ function openMissionHub() {
     // Apply min level filter
     if (minLevel >= 1 && minLevel <= 5) hubs = hubs.filter(h => h.byLevel[minLevel - 1] > 0);
 
-    // If agent-level filters are active, re-count agents per hub
+    // mission_hubs.json now contains ALL systems with agents — no runtime expansion needed
+    // Re-count agents per hub
     if (typeFilter || divFilter || factionFilter || corpFilter || excludeLoc) {
       hubs = hubs.map(h => {
         const stns = systems[h.sysId]?.stations || [];
