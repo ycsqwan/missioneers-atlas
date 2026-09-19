@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
@@ -3945,7 +3945,7 @@ function _initLPFilters() {
   const allCorpIds = new Set();
   for (const offers of Object.values(lpOffersIndex || {})) {
     for (const o of offers) {
-      const cid = o._corp_id;
+      const cid = o.corpID;
       if (!cid) continue;
       allCorpIds.add(cid);
       const corp = SDE.corpsById[cid];
@@ -3963,7 +3963,7 @@ function _initLPFilters() {
     const bn = SDE.factionsById[+b]?.name?.en || '';
     return an.localeCompare(bn);
   });
-  factionSel.innerHTML = '<option value="">All Factions</option>';
+  factionSel.innerHTML = `<option value="">${t('allFactions')}</option>`;
   for (const fid of factions) {
     const f = SDE.factionsById[+fid];
     const nm = f?.name?.en || f?.name || `Faction ${fid}`;
@@ -3973,7 +3973,7 @@ function _initLPFilters() {
   // Faction change → update corp dropdown
   factionSel.onchange = () => {
     const fid = factionSel.value;
-    corpSel.innerHTML = '<option value="">All Corps</option>';
+    corpSel.innerHTML = `<option value="">${t('lpfAllCorps')}</option>`;
     if (!fid) return;
     const corps = [...(factionCorps[fid] || [])].sort((a,b) => {
       const an = lpOffersCorpNames?.[String(a)] || SDE.corpsById[a]?.name || '';
@@ -4028,7 +4028,7 @@ function doLPFSearch() {
     // No name filter — show all items for selected corp/faction
     for (const [tidStr, offers] of Object.entries(lpOffersIndex || {})) {
       for (const offer of offers) {
-        const corpId = offer._corp_id;
+        const corpId = offer.corpID;
         if (filterCorp && String(corpId) !== filterCorp) continue;
         if (filterFaction) {
           const corp = SDE.corpsById[corpId];
@@ -4057,20 +4057,20 @@ function doLPFSearch() {
     const typeName = resolveTypeName(+tid);
 
     for (const offer of offers) {
-      const corpId = offer._corp_id;
+      const corpId = offer.corpID;
       // Apply faction/corp filter
       if (filterCorp && String(corpId) !== filterCorp) continue;
       if (filterFaction) {
         const corp = SDE.corpsById[corpId];
         if (!corp || String(corp.factionID) !== filterFaction) continue;
       }
-      const corpName = lpOffersCorpNames?.[String(corpId)] || offer._corp_name || SDE.corpsById[corpId]?.name || `Corp ${corpId}`;
+      const corpName = lpOffersCorpNames?.[String(corpId)] || SDE.corpsById[corpId]?.name || `Corp ${corpId}`;
       rows.push({
         tid: +tid, typeName, corpId, corpName,
-        lpCost: offer.lp_cost || 0,
-        iskCost: offer.isk_cost || 0,
+        lpCost: offer.lpCost || 0,
+        iskCost: offer.iskCost || 0,
         quantity: offer.quantity || 1,
-        requiredItems: offer.required_items || [],
+        requiredItems: offer.requiredItems || [],
       });
     }
   }
@@ -4086,7 +4086,7 @@ function doLPFSearch() {
     const r = rows[i];
     const reqStr = r.requiredItems.length > 0
       ? r.requiredItems.slice(0,3).map(ri => {
-          const rnm = resolveTypeName(ri.type_id);
+          const rnm = resolveTypeName(ri.typeID);
           return `${ri.quantity}x ${rnm}`;
         }).join(', ')
       : '-';
@@ -4133,7 +4133,7 @@ function showLPFDetailByIdx(idx) {
   if (r.requiredItems.length > 0) {
     detail += `\n── ${t('lpfReqItems')} ──\n`;
     for (const ri of r.requiredItems) {
-      const rnm = resolveTypeName(ri.type_id);
+      const rnm = resolveTypeName(ri.typeID);
       detail += `  ${ri.quantity.toLocaleString().padStart(8)} x ${rnm}\n`;
     }
   } else {
