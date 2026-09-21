@@ -336,6 +336,21 @@ select{cursor:pointer}
 .modal-header h3{font-size:12px;color:var(--accent);flex:1;margin:0;font-weight:normal;letter-spacing:0.5px}
 .modal-close{background:none;border:none;color:var(--text-dim);cursor:pointer;font-size:14px;padding:2px 6px}
 .modal-close:hover{color:var(--text-bright)}
+.modal-minibar{
+  position:fixed;bottom:0;left:50%;transform:translateX(-50%);
+  z-index:101;
+  background:var(--bg-card);border:1px solid var(--border);border-bottom:none;
+  border-radius:8px 8px 0 0;
+  padding:6px 16px;
+  display:flex;align-items:center;gap:10px;
+  cursor:pointer;
+  box-shadow:0 -2px 12px rgba(0,0,0,.4);
+  font-size:11px;color:var(--accent);
+  transition:background .15s;
+}
+.modal-minibar:hover{background:var(--bg-panel)}
+.modal-minibar .minibar-title{font-weight:600;letter-spacing:.3px}
+.modal-minibar .minibar-hint{font-size:9px;color:var(--text-dim)}
 .modal-filters{padding:8px 12px;border-bottom:1px solid var(--border);flex-shrink:0}
 .modal-body{flex:1;overflow-y:auto;padding:0}
 .modal-body::-webkit-scrollbar{width:4px}
@@ -2884,7 +2899,8 @@ function openModal(title, sizeClass) {
       <div class="modal-dialog ${sizeClass||'medium'}">
         <div class="modal-header">
           <h3>${title}</h3>
-          <button class="modal-close" onclick="closeModal()">✕</button>
+          <button class="modal-close" onclick="minimizeModal()" title="Minimize">—</button>
+          <button class="modal-close" onclick="closeModal()" title="Close">✕</button>
         </div>
         <div class="modal-filters" id="modal-filters"></div>
         <div class="modal-body" id="modal-body"></div>
@@ -2900,9 +2916,34 @@ function openModal(title, sizeClass) {
 }
 
 function closeModal() {
+  const mb = document.querySelector('.modal-minibar');
+  if (mb) mb.remove();
   document.getElementById('modal-root').innerHTML = '';
   activeModal = null;
   _acHide();
+}
+
+let _minimizedTitle = '';
+function minimizeModal() {
+  const overlay = document.querySelector('.modal-overlay');
+  if (!overlay) return;
+  const h3 = overlay.querySelector('.modal-header h3');
+  _minimizedTitle = h3 ? h3.textContent : '';
+  overlay.style.display = 'none';
+  let mb = document.querySelector('.modal-minibar');
+  if (!mb) {
+    mb = document.createElement('div');
+    mb.className = 'modal-minibar';
+    mb.onclick = restoreModal;
+    document.body.appendChild(mb);
+  }
+  mb.innerHTML = '<span class="minibar-title">\u{1F4C4} ' + _minimizedTitle + '</span><span class="minibar-hint">click to restore</span>';
+}
+function restoreModal() {
+  const overlay = document.querySelector('.modal-overlay');
+  if (overlay) overlay.style.display = '';
+  const mb = document.querySelector('.modal-minibar');
+  if (mb) mb.remove();
 }
 
 // ── Shared: Faction → Corporation cascading dropdown helpers ──
@@ -3126,9 +3167,9 @@ function doAgentSearch() {
   for (let i=0; i<shown.length; i++) {
     const r = shown[i];
     const secStr = r.sec >= 0 ? r.sec.toFixed(1) : r.sec.toFixed(2);
-    html += `<tr ondblclick="closeModal();jumpToSystem(${r.sysId})" title="Double-click to navigate">
+    html += `<tr ondblclick="minimizeModal();jumpToSystem(${r.sysId})" title="Double-click to navigate">
       <td class="col-num">${i+1}</td><td class="col-jumps">${r.dist}</td>
-      <td>${r.sysName}</td><td class="col-sec">${secStr}</td>
+      <td><span style="color:var(--accent);cursor:pointer;text-decoration:underline dotted" onclick="minimizeModal();jumpToSystem(${r.sysId})">${r.sysName}</span></td><td class="col-sec">${secStr}</td>
       <td>${r.agentName}${r.isLocator?' [L]':''}</td>
       <td class="col-lvl">${r.level}</td><td>${r.typeName}</td><td>${r.divName}</td>
       <td>${r.factionName}</td><td>${r.corpName}</td><td>${r.stnName}</td></tr>`;
@@ -3230,7 +3271,7 @@ function openNearestLP() {
 
   document.getElementById('lp-preview-btn').onclick = () => {
     if (!selectedResult) return;
-    jumpToSystem(selectedResult.sysId);
+    minimizeModal(); jumpToSystem(selectedResult.sysId);
   };
 
   function doLPSearch() {
@@ -3300,9 +3341,9 @@ function openNearestLP() {
     for (let i=0; i<shown.length; i++) {
       const r = shown[i];
       const secStr = r.sec >= 0 ? r.sec.toFixed(1) : r.sec.toFixed(2);
-      html += `<tr onclick="selectLPRow(this,${i})" ondblclick="closeModal();jumpToSystem(${r.sysId})" data-idx="${i}">
+      html += `<tr onclick="selectLPRow(this,${i})" ondblclick="minimizeModal();jumpToSystem(${r.sysId})" data-idx="${i}">
         <td class="col-num">${i+1}</td><td class="col-jumps">${r.dist}</td>
-        <td>${r.sysName}</td><td class="col-sec">${secStr}</td>
+        <td><span style="color:var(--accent);cursor:pointer;text-decoration:underline dotted" onclick="minimizeModal();jumpToSystem(${r.sysId})">${r.sysName}</span></td><td class="col-sec">${secStr}</td>
         ${showCorp ? `<td>${r.corpName}${r.corpNameZh ? ' ('+r.corpNameZh+')' : ''}</td>` : ''}
         <td>${r.stnName}</td></tr>`;
     }
@@ -3511,7 +3552,7 @@ function openMissionHub() {
       }
 
       html += `<tr class="mh-row" onclick="toggleHubDetail(${i})" title="${t('mhClickExpand')}">
-        <td class="col-num">${i+1}</td><td>${nm.en||'?'}</td><td class="col-sec">${secStr}</td>
+        <td class="col-num">${i+1}</td><td><span style="color:var(--accent);cursor:pointer;text-decoration:underline dotted" onclick="event.stopPropagation();minimizeModal();jumpToSystem(${h.sysId})">${nm.en||'?'}</span></td><td class="col-sec">${secStr}</td>
         <td>${rname}</td><td>${cname}</td>
         <td class="col-num">${l3}</td><td class="col-num">${l4}</td><td class="col-num">${l5}</td>
         <td class="col-num">${total}</td>
