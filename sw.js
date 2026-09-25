@@ -1,10 +1,11 @@
-const CACHE = 'atlas-v14';
+const CACHE = 'atlas-v15';
 const ASSETS = [
   './',
   './index.html',
   './systems_static.json',
   './sde_data.json',
   './mission_hubs.json',
+  './mission_guides.json',
   './types_names.json',
   './station_names.json',
   './agent_types.json',

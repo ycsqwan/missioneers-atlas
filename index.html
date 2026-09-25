@@ -741,6 +741,7 @@ const I18N = {
     mdWithin: 'within {s}s',
     mdStandingRewards: 'Standing rewards: Yes',
     mdDialogues: 'Dialogues',
+    mdGuide: 'Guide',
 
     // LP Store Finder
     lpfTitle: 'LP Store Finder — Item to Corporation Lookup',
@@ -909,6 +910,7 @@ const I18N = {
     mdWithin: '（{s}秒内）',
     mdStandingRewards: '声望奖励：有',
     mdDialogues: '对话',
+    mdGuide: '攻略',
 
     // LP Store Finder
     lpfTitle: 'LP 商店查询 — 物品→军团',
@@ -1019,6 +1021,7 @@ let regionHulls = {}, regionLabelPos = {};
 let SDE = null;           // SDE data (agents, stations, corps, factions)
 let missionHubs = null;   // all systems with mission agents
 let missionsData = null;  // { missionsById, missionsByName }
+let missionGuides = null;  // { [nameEn]: { u, p } } — external guide links (EVE University Wiki)
 let typesNames = null;    // { typeID: { en, zh } }
 let agentTypesNames = null; // { typeID: name }
 let agentDivisions = null;  // { divID: { en, zh } }
@@ -1150,10 +1153,15 @@ async function loadSDE() {
 async function _ensureMissionsData() {
   if (missionsData) return true;
   _setLoadProgress(30, 'Loading missions data (12 MB)...');
-  const data = await _fetchJSON('./missions_data.json');
+  const [data, guides] = await Promise.all([
+    _fetchJSON('./missions_data.json'),
+    _fetchJSON('./mission_guides.json')
+  ]);
   if (data) {
     missionsData = data;
+    missionGuides = guides?.guides || null;
     console.log('[Atlas] Missions loaded:', missionsData._meta?.count);
+    console.log('[Atlas] Guide links loaded:', guides?._meta?.count || 0);
     _hideLoadBar();
     return true;
   }
@@ -3886,7 +3894,28 @@ function showMissionDetail(mid) {
     }
   }
 
-  document.getElementById('mq-detail').textContent = lines.join('\n');
+  const detailEl = document.getElementById('mq-detail');
+  detailEl.textContent = lines.join('\n');
+
+  // External guide link with provider label (URL + source name)
+  const guide = missionGuides && missionGuides[mission.name?.en];
+  if (guide) {
+    const wrap = document.createElement('div');
+    wrap.style.cssText = 'margin-top:10px;padding-top:8px;border-top:1px solid var(--border)';
+    wrap.appendChild(document.createTextNode(t('mdGuide') + ': '));
+    const a = document.createElement('a');
+    a.href = guide.u;
+    a.target = '_blank';
+    a.rel = 'noopener noreferrer';
+    a.style.cssText = 'color:var(--accent);word-break:break-all';
+    a.textContent = guide.u;
+    const label = document.createElement('span');
+    label.style.cssText = 'color:var(--text-dim)';
+    label.textContent = ' (' + guide.p + ')';
+    wrap.appendChild(a);
+    wrap.appendChild(label);
+    detailEl.appendChild(wrap);
+  }
 }
 
 // Helper: get type name from typesNames
