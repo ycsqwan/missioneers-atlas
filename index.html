@@ -4162,11 +4162,7 @@ function doLPFSearch() {
   const truncNote = matchedTids.length > limit ? t('lpfShowingFirst', {n: limit}) : '';
   document.getElementById('lpf-summary').textContent = t('lpfOffersAcross', {offers: rows.length, items: matchedTids.length}) + filterStr + truncNote;
 
-  // Show detail for first row
-  if (rows.length > 0) {
-    window._lpfRows = rows;
-    showLPFDetailByIdx(0);
-  }
+  window._lpfRows = rows;
 }
 
 function showLPFDetail(tr, idx) {
