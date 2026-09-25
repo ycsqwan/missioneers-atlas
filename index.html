@@ -336,6 +336,10 @@ select{cursor:pointer}
 .modal-header h3{font-size:12px;color:var(--accent);flex:1;margin:0;font-weight:normal;letter-spacing:0.5px}
 .modal-close{background:none;border:none;color:var(--text-dim);cursor:pointer;font-size:14px;padding:2px 6px}
 .modal-close:hover{color:var(--text-bright)}
+.lpf-popup{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:var(--bg-card,#1a2332);border:1px solid var(--border,#2a3a4e);border-radius:12px;box-shadow:0 12px 48px rgba(0,0,0,.5);padding:24px 28px;z-index:12000;min-width:360px;max-width:520px;max-height:70vh;overflow-y:auto;font-family:Consolas,monospace;font-size:12px;line-height:1.7;white-space:pre-wrap;color:var(--text,#c0c8d0)}
+.lpf-popup-close{position:absolute;top:10px;right:14px;cursor:pointer;font-size:18px;color:var(--text-muted,#6a7a8e);font-family:sans-serif;line-height:1}
+.lpf-popup-close:hover{color:var(--text-bright,#e0e8f0)}
+.lpf-popup-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:11999}
 .modal-minibar{
   position:fixed;bottom:0;left:50%;transform:translateX(-50%);
   z-index:101;
@@ -4177,7 +4181,7 @@ function showLPFDetailByIdx(idx) {
   const r = rows[idx];
   if (!r) return;
 
-  let detail = `═══ ${r.typeName} ═══\n`;
+  let detail = `${r.typeName}\n`;
   detail += `${t('corporation')}: ${r.corpName}\n`;
   detail += `LP ${t('lpfTableLPCost') || 'Cost'}:     ${r.lpCost.toLocaleString()}\n`;
   detail += `ISK ${t('lpfTableISKCost') || 'Cost'}:    ${formatISK(r.iskCost)}\n`;
@@ -4194,8 +4198,29 @@ function showLPFDetailByIdx(idx) {
     detail += `  ${t('lpfNone')}\n`;
   }
 
+  closeLPFPopup();
+  const backdrop = document.createElement('div');
+  backdrop.className = 'lpf-popup-backdrop';
+  backdrop.onclick = closeLPFPopup;
+  const pop = document.createElement('div');
+  pop.className = 'lpf-popup';
+  pop.innerHTML = '<span class="lpf-popup-close" onclick="closeLPFPopup()">\u2715</span>' + escapeHtml(detail);
+  document.body.appendChild(backdrop);
+  document.body.appendChild(pop);
   document.getElementById('lpf-detail').textContent = detail;
 }
+
+function closeLPFPopup() {
+  document.querySelectorAll('.lpf-popup,.lpf-popup-backdrop').forEach(e => e.remove());
+}
+
+function escapeHtml(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') closeLPFPopup();
+});
 
 function formatISK(v) {
   if (!v) return '-';
