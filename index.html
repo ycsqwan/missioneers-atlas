@@ -666,6 +666,15 @@ const I18N = {
     corps: 'Corps',
     type: 'Type',
     allDivisions: 'All Divisions',
+    securityFilter: 'Security',
+    allSecurity: 'All',
+    highSec: 'High Sec (>=0.5)',
+    lowSec: 'Low Sec (0.1-0.49)',
+    nullSec: 'Null Sec (<0.1)',
+    sortByL3: 'Sort by L3 count',
+    sortByL4: 'Sort by L4 count',
+    sortByL5: 'Sort by L5 count',
+    sortedBy: 'Sorted by',
     allFactions: 'All Factions',
     allCorps: 'All Corporations',
     allTypes: 'All Types',
@@ -835,6 +844,15 @@ const I18N = {
     corps: '军团',
     type: '类型',
     allDivisions: '全部部门',
+    securityFilter: '安全等级',
+    allSecurity: '全部',
+    highSec: '高安 (>=0.5)',
+    lowSec: '低安 (0.1-0.49)',
+    nullSec: '00 (<0.1)',
+    sortByL3: '按 L3 数量排序',
+    sortByL4: '按 L4 数量排序',
+    sortByL5: '按 L5 数量排序',
+    sortedBy: '排序方式',
     allFactions: '全部势力',
     allCorps: '全部军团',
     allTypes: '全部类型',
@@ -3387,6 +3405,7 @@ function openNearestLP() {
 // Intelligence — Mission Hub Discovery
 // ═══════════════════════════════════════════════════════════════════════════
 function openMissionHub() {
+  window._mhSortLevel = null;
   if (!SDE || !missionHubs) { setStatus(t('sdeNotLoaded'), 'yellow'); return; }
 
   const m = openModal('Mission Hub Discovery', 'wide');
@@ -3407,6 +3426,7 @@ function openMissionHub() {
       <div><label>${t('minLevel')}</label><select id="mh-min-level"><option>4</option><option>3</option><option>5</option></select></div>
       <div><label>${t('agentType')}</label><select id="mh-type"><option value="">${t('allMissionTypes')}</option>${typeOpts}</select></div>
       <div style="flex:0;display:flex;align-items:flex-end;padding-bottom:2px"><label class="modal-check"><input type="checkbox" id="mh-exclude-loc" checked> ${t('excludeLocators')}</label></div>
+      <div><label>${t('securityFilter')}</label><select id="mh-sec"><option value="">${t('allSecurity')}</option><option value="high">${t('highSec')}</option><option value="low">${t('lowSec')}</option><option value="null">${t('nullSec')}</option></select></div>
     </div>
     <div class="mf-row">
       <div><label>${t('faction')}</label><select id="mh-faction"><option value="">${t('allFactions')}</option>${factionOpts}</select></div>
@@ -3420,6 +3440,8 @@ function openMissionHub() {
   m.footer.innerHTML = `<span class="modal-summary" id="mh-summary"></span><span class="modal-status" id="mh-status"></span><div style="margin-left:auto;display:flex;gap:6px"><button class="btn accent" id="mh-search-btn">${t('search')}</button><button class="btn sm" onclick="closeModal()">${t('close')}</button></div>`;
 
   function renderHubs() {
+    let secFilter = document.getElementById('mh-sec').value;
+    let sortLevel = window._mhSortLevel || null; // 3, 4, or 5
     const minLevel = parseInt(document.getElementById('mh-min-level').value);
     const regionFilter = document.getElementById('mh-region').value;
     const constFilter = document.getElementById('mh-const').value;
@@ -3448,6 +3470,17 @@ function openMissionHub() {
     // Apply constellation filter
     if (constFilter) {
       hubs = hubs.filter(h => systems[h.sysId]?.constellationID === +constFilter);
+    }
+
+    // Apply security filter
+    if (secFilter) {
+      hubs = hubs.filter(h => {
+        const sec = systems[h.sysId]?.securityStatus || 0;
+        if (secFilter === 'high') return sec >= 0.5;
+        if (secFilter === 'low') return sec >= 0.1 && sec < 0.5;
+        if (secFilter === 'null') return sec < 0.1;
+        return true;
+      });
     }
 
     // Re-count agents per hub (must run BEFORE minLevel so level checks use filtered data)
@@ -3483,7 +3516,12 @@ function openMissionHub() {
         }
         return { ...h, _filteredAgents: count, _filteredByLevel: levelCounts, _divs: divSet, _facs: facSet, _corpCounts: corpCounts };
       }).filter(h => h._filteredAgents > 0);
-      hubs.sort((a,b) => b._filteredAgents - a._filteredAgents);
+      if (sortLevel) {
+        const li = sortLevel - 1;
+        hubs.sort((a,b) => (b._filteredByLevel?.[li]||0) - (a._filteredByLevel?.[li]||0));
+      } else {
+        hubs.sort((a,b) => b._filteredAgents - a._filteredAgents);
+      }
     }
 
     // Apply min level filter AFTER re-count (uses filtered level data when available)
@@ -3499,7 +3537,7 @@ function openMissionHub() {
     const el = document.getElementById('mh-results');
     let html = `<table class="modal-table"><thead><tr>
       <th class="col-num">#</th><th>${t('system')}</th><th class="col-sec">${t('security')}</th><th>Region</th><th>Constellation</th>
-      <th class="col-num">L3</th><th class="col-num">L4</th><th class="col-num">L5</th>
+      <th class="col-num"><button id="mh-sort-l3" class="th-sort-btn" title="${t('sortByL3')}" style="all:unset;cursor:pointer;color:inherit;font-weight:inherit">L3</button></th><th class="col-num"><button id="mh-sort-l4" class="th-sort-btn" title="${t('sortByL4')}" style="all:unset;cursor:pointer;color:inherit;font-weight:inherit">L4</button></th><th class="col-num"><button id="mh-sort-l5" class="th-sort-btn" title="${t('sortByL5')}" style="all:unset;cursor:pointer;color:inherit;font-weight:inherit">L5</button></th>
       <th class="col-num">Total</th><th>${t('division')}s</th><th>${t('faction')}s</th><th>${t('corps')} Detail</th></tr></thead><tbody>`;
     for (let i=0; i<hubs.length; i++) {
       const h = hubs[i];
@@ -3622,6 +3660,37 @@ function openMissionHub() {
   }
 
   document.getElementById('mh-search-btn').onclick = renderHubs;
+  // Sort button clicks
+  for (const lv of [3,4,5]) {
+    const btn = document.getElementById('mh-sort-l' + lv);
+    if (btn) {
+      btn.onclick = (e) => {
+        e.stopPropagation();
+        const cur = window._mhSortLevel;
+        window._mhSortLevel = (cur === lv) ? null : lv;
+        // Update button styles
+        for (const l2 of [3,4,5]) {
+          const b = document.getElementById('mh-sort-l' + l2);
+          if (b) {
+            b.style.color = (window._mhSortLevel === l2) ? 'var(--accent)' : 'inherit';
+            b.style.fontWeight = (window._mhSortLevel === l2) ? 'bold' : 'inherit';
+          }
+        }
+        renderHubs();
+        if (typeof track === 'function') {
+          track('tool_use', { tool_name: 'mission_hub', action: 'sort_by_level', sort_level: 'L' + lv, sort_field: 'agent_count', sort_order: 'desc' });
+        }
+      };
+    }
+  }
+  // Reset sort when search re-runs
+  document.getElementById('mh-search-btn').addEventListener('click', () => {
+    window._mhSortLevel = null;
+    for (const l2 of [3,4,5]) {
+      const b = document.getElementById('mh-sort-l' + l2);
+      if (b) { b.style.color = 'inherit'; b.style.fontWeight = 'inherit'; }
+    }
+  });
   renderHubs();
 }
 
