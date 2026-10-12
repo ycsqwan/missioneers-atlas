@@ -3652,6 +3652,22 @@ function openMissionHub() {
     html += '</tbody></table>';
     el.innerHTML = html;
 
+    // Bind L3/L4/L5 sort buttons (header is regenerated each render)
+    for (const lv of [3,4,5]) {
+      const btn = document.getElementById('mh-sort-l' + lv);
+      if (!btn) continue;
+      btn.onclick = (e) => {
+        e.stopPropagation();
+        window._mhSortLevel = (window._mhSortLevel === lv) ? null : lv;
+        renderHubs();
+        if (typeof track === 'function') {
+          track('tool_use', { tool_name: 'mission_hub', action: 'sort_by_level', sort_level: 'L' + lv, sort_field: 'agent_count', sort_order: 'desc' });
+        }
+      };
+      btn.style.color = (window._mhSortLevel === lv) ? 'var(--accent)' : 'inherit';
+      btn.style.fontWeight = (window._mhSortLevel === lv) ? 'bold' : 'inherit';
+    }
+
     const totalSystems = hubs.length;
     const topSys = hubs.length > 0 ? (systems[hubs[0].sysId]?.name?.en || '?') : '?';
     const topAgents = hubs.length > 0 ? (hubs[0]._filteredAgents !== undefined ? hubs[0]._filteredAgents : hubs[0].agents) : 0;
@@ -3659,38 +3675,7 @@ function openMissionHub() {
     document.getElementById('mh-status').textContent = '';
   }
 
-  document.getElementById('mh-search-btn').onclick = renderHubs;
-  // Sort button clicks
-  for (const lv of [3,4,5]) {
-    const btn = document.getElementById('mh-sort-l' + lv);
-    if (btn) {
-      btn.onclick = (e) => {
-        e.stopPropagation();
-        const cur = window._mhSortLevel;
-        window._mhSortLevel = (cur === lv) ? null : lv;
-        // Update button styles
-        for (const l2 of [3,4,5]) {
-          const b = document.getElementById('mh-sort-l' + l2);
-          if (b) {
-            b.style.color = (window._mhSortLevel === l2) ? 'var(--accent)' : 'inherit';
-            b.style.fontWeight = (window._mhSortLevel === l2) ? 'bold' : 'inherit';
-          }
-        }
-        renderHubs();
-        if (typeof track === 'function') {
-          track('tool_use', { tool_name: 'mission_hub', action: 'sort_by_level', sort_level: 'L' + lv, sort_field: 'agent_count', sort_order: 'desc' });
-        }
-      };
-    }
-  }
-  // Reset sort when search re-runs
-  document.getElementById('mh-search-btn').addEventListener('click', () => {
-    window._mhSortLevel = null;
-    for (const l2 of [3,4,5]) {
-      const b = document.getElementById('mh-sort-l' + l2);
-      if (b) { b.style.color = 'inherit'; b.style.fontWeight = 'inherit'; }
-    }
-  });
+  document.getElementById('mh-search-btn').onclick = () => { window._mhSortLevel = null; renderHubs(); };
   renderHubs();
 }
 
