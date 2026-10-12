@@ -681,6 +681,8 @@ const I18N = {
     excludeLocators: 'Exclude Locators',
     jumps: 'Jumps',
     system: 'System',
+    region: 'Region',
+    constellation: 'Constellation',
     sec: 'Sec',
     agents: 'agents',
     agent: 'Agent',
@@ -859,6 +861,8 @@ const I18N = {
     excludeLocators: '排除定位员',
     jumps: '跳数',
     system: '星系',
+    region: '星域',
+    constellation: '星座',
     sec: '安等',
     agents: '代理人',
     agent: '代理人',
@@ -3028,8 +3032,8 @@ function _buildRegionConstMap(dataSource) {
     const rec = systems[sysId]; if (!rec) return;
     const rid = rec.regionID; if (!rid) return;
     const cid = rec.constellationID; if (!cid) return;
-    if (!rcMap[rid]) rcMap[rid] = { name: (rec.regionName?.en || '?'), consts: {} };
-    if (!rcMap[rid].consts[cid]) rcMap[rid].consts[cid] = (rec.constellationName?.en || '?');
+    if (!rcMap[rid]) rcMap[rid] = { name: (rec.regionName?.en || '?'), nameZh: (rec.regionName?.zh || ''), consts: {} };
+    if (!rcMap[rid].consts[cid]) rcMap[rid].consts[cid] = { name: (rec.constellationName?.en || '?'), nameZh: (rec.constellationName?.zh || '') };
   };
   if (dataSource === 'hubs' && typeof missionHubs !== 'undefined' && missionHubs) {
     for (const h of missionHubs) iterate(h.sysId);
@@ -3041,14 +3045,14 @@ function _buildRegionConstMap(dataSource) {
 
 function _buildRegionOptsFromMap(rcMap) {
   return Object.entries(rcMap).sort((a,b) => a[1].name.localeCompare(b[1].name))
-    .map(([rid, v]) => `<option value="${rid}">${v.name}</option>`).join('');
+    .map(([rid, v]) => `<option value="${rid}">${v.name}${v.nameZh ? ' (' + v.nameZh + ')' : ''}</option>`).join('');
 }
 
 function _buildConstOptsFromMap(rcMap, regionId) {
   if (!regionId) return '';
   const entry = rcMap[+regionId]; if (!entry) return '';
-  return Object.entries(entry.consts).sort((a,b) => a[1].localeCompare(b[1]))
-    .map(([cid, name]) => `<option value="${cid}">${name}</option>`).join('');
+  return Object.entries(entry.consts).sort((a,b) => a[1].name.localeCompare(b[1].name))
+    .map(([cid, v]) => `<option value="${cid}">${v.name}${v.nameZh ? ' (' + v.nameZh + ')' : ''}</option>`).join('');
 }
 
 function _bindRegionConstCascade(regionSelId, constSelId, rcMap) {
@@ -3056,7 +3060,7 @@ function _bindRegionConstCascade(regionSelId, constSelId, rcMap) {
   const cEl = document.getElementById(constSelId);
   if (!rEl || !cEl) return;
   rEl.addEventListener('change', () => {
-    cEl.innerHTML = '<option value="">All Constellations</option>' + _buildConstOptsFromMap(rcMap, rEl.value);
+    cEl.innerHTML = '<option value="">' + t('allConst') + '</option>' + _buildConstOptsFromMap(rcMap, rEl.value);
   });
 }
 
@@ -3536,7 +3540,7 @@ function openMissionHub() {
 
     const el = document.getElementById('mh-results');
     let html = `<table class="modal-table"><thead><tr>
-      <th class="col-num">#</th><th>${t('system')}</th><th class="col-sec">${t('security')}</th><th>Region</th><th>Constellation</th>
+      <th class="col-num">#</th><th>${t('system')}</th><th class="col-sec">${t('security')}</th><th>${t('region')}</th><th>${t('constellation')}</th>
       <th class="col-num"><button id="mh-sort-l3" class="th-sort-btn" title="${t('sortByL3')}" style="all:unset;cursor:pointer;color:inherit;font-weight:inherit">L3</button></th><th class="col-num"><button id="mh-sort-l4" class="th-sort-btn" title="${t('sortByL4')}" style="all:unset;cursor:pointer;color:inherit;font-weight:inherit">L4</button></th><th class="col-num"><button id="mh-sort-l5" class="th-sort-btn" title="${t('sortByL5')}" style="all:unset;cursor:pointer;color:inherit;font-weight:inherit">L5</button></th>
       <th class="col-num">Total</th><th>${t('division')}s</th><th>${t('faction')}s</th><th>${t('corps')} Detail</th></tr></thead><tbody>`;
     for (let i=0; i<hubs.length; i++) {
@@ -3545,8 +3549,8 @@ function openMissionHub() {
       const nm = sysRec?.name || {};
       const sec = (sysRec?.securityStatus||0);
       const secStr = sec.toFixed(2);
-      const rname = sysRec?.regionName?.en || sysRec?.regionName || '?';
-      const cname = sysRec?.constellationName?.en || sysRec?.constellationName || '?';
+      const rname = (sysRec?.regionName?.en || '?') + (sysRec?.regionName?.zh ? ' (' + sysRec.regionName.zh + ')' : '');
+      const cname = (sysRec?.constellationName?.en || '?') + (sysRec?.constellationName?.zh ? ' (' + sysRec.constellationName.zh + ')' : '');
       const bl = h._filteredByLevel || h.byLevel;
       const l3 = bl[2] || 0, l4 = bl[3] || 0, l5 = bl[4] || 0;
       const total = h._filteredAgents !== undefined ? h._filteredAgents : h.agents;
@@ -3605,7 +3609,7 @@ function openMissionHub() {
       }
 
       html += `<tr class="mh-row" onclick="toggleHubDetail(${i})" title="${t('mhClickExpand')}">
-        <td class="col-num">${i+1}</td><td><span style="color:var(--accent);cursor:pointer;text-decoration:underline dotted" onclick="event.stopPropagation();minimizeModal();jumpToSystem(${h.sysId})">${nm.en||'?'}</span></td><td class="col-sec">${secStr}</td>
+        <td class="col-num">${i+1}</td><td><span style="color:var(--accent);cursor:pointer;text-decoration:underline dotted" onclick="event.stopPropagation();minimizeModal();jumpToSystem(${h.sysId})">${nm.en||'?'}${nm.zh?' ('+nm.zh+')':''}</span></td><td class="col-sec">${secStr}</td>
         <td>${rname}</td><td>${cname}</td>
         <td class="col-num">${l3}</td><td class="col-num">${l4}</td><td class="col-num">${l5}</td>
         <td class="col-num">${total}</td>
@@ -3669,7 +3673,7 @@ function openMissionHub() {
     }
 
     const totalSystems = hubs.length;
-    const topSys = hubs.length > 0 ? (systems[hubs[0].sysId]?.name?.en || '?') : '?';
+    const topSys = hubs.length > 0 ? ((systems[hubs[0].sysId]?.name?.en || '?') + (systems[hubs[0].sysId]?.name?.zh ? ' (' + systems[hubs[0].sysId].name.zh + ')' : '')) : '?';
     const topAgents = hubs.length > 0 ? (hubs[0]._filteredAgents !== undefined ? hubs[0]._filteredAgents : hubs[0].agents) : 0;
     document.getElementById('mh-summary').textContent = t('mhFound', {n: totalSystems, lv: minLevel, sys: topSys, agents: topAgents});
     document.getElementById('mh-status').textContent = '';
