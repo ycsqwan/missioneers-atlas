@@ -1032,6 +1032,13 @@ function getStationName(stnId, typeID) {
   return `Station #${stnId}`;
 }
 
+// Format an NPC corporation name as "English (中文)" using SDE data.
+function _corpLabel(corp, cid, fallback) {
+  if (corp && corp.name) return corp.nameZh ? `${corp.name} (${corp.nameZh})` : corp.name;
+  if (fallback !== undefined) return fallback;
+  return cid ? `Corp ${cid}` : '';
+}
+
 // ═══════════════════════════════════════════════════════════════════════════
 // State
 // ═══════════════════════════════════════════════════════════════════════════
@@ -1904,7 +1911,7 @@ function showDetail(sid) {
       html += `<div class="sep"></div><div style="font-size:11px;font-weight:600;color:var(--accent);margin:6px 0">Agents (${agentsHere.length})</div>`;
       agentsHere.sort((a,b) => b.level - a.level);
       for (const a of agentsHere) {
-        const corpName = SDE.corpsById[a.corpID]?.name || `Corp ${a.corpID}`;
+        const corpName = _corpLabel(SDE.corpsById[a.corpID], a.corpID);
         const divName = AGENT_DIVISION_NAMES[a.divisionID] || `Div ${a.divisionID}`;
         html += `<div class="agent-card">
           <div class="agent-name">${a.name} <span class="agent-level l${a.level}">L${a.level}</span></div>
@@ -1932,7 +1939,7 @@ function showDetail(sid) {
     html += `<div class="sep"></div><div style="font-size:11px;font-weight:600;color:var(--blue);margin:6px 0">Stations (${stns.length})</div>`;
     for (const st of stns) {
       const stnName = getStationName(st.id, st.typeID);
-      const ownerCorp = SDE?.corpsById[st.ownerID]?.name || st.ownerID;
+      const ownerCorp = _corpLabel(SDE?.corpsById[st.ownerID], st.ownerID, st.ownerID);
       const stnServices = SDE?.stationsById?.[st.id]?.services || [];
       const stnAgents = SDE?.agentsByLocation?.[st.id] || [];
       const hasAgents = stnAgents.length > 0;
@@ -1946,7 +1953,7 @@ function showDetail(sid) {
         const sorted = [...stnAgents].sort((a,b) => b.level - a.level);
         html += `<div class="stn-agents hidden" style="margin-top:4px;padding-top:4px;border-top:1px solid #1a2a4a">`;
         for (const a of sorted) {
-          const corpName = SDE?.corpsById[a.corpID]?.name || `Corp ${a.corpID}`;
+          const corpName = _corpLabel(SDE?.corpsById[a.corpID], a.corpID);
           const divName = AGENT_DIVISION_NAMES[a.divisionID] || `Div ${a.divisionID}`;
           html += `<div class="agent-card">
             <div class="agent-name">${a.name} <span class="agent-level l${a.level}">L${a.level}</span>${a.isLocator?' <span style="font-size:8px;color:var(--text-dim)">Locator</span>':''}</div>
@@ -3178,7 +3185,7 @@ function doAgentSearch() {
           typeName: AGENT_TYPE_NAMES[a.agentTypeID] || `T${a.agentTypeID}`,
           divName: AGENT_DIVISION_NAMES[a.divisionID] || `D${a.divisionID}`,
           factionName: SDE.factionsById[SDE.corpsById[a.corpID]?.factionID]?.name || '',
-          corpName: SDE.corpsById[a.corpID]?.name || `Corp ${a.corpID}`,
+          corpName: _corpLabel(SDE.corpsById[a.corpID], a.corpID),
           stnId: st.id, stnName: stnName, isLocator: a.isLocator,
         });
       }
@@ -3504,7 +3511,7 @@ function openMissionHub() {
             if (typeFilter && a.agentTypeID !== +typeFilter) continue;
             if (divFilter && a.divisionID !== +divFilter) continue;
             if (allowedCorpIds && !allowedCorpIds.has(a.corpID)) continue;
-            const cn = SDE.corpsById[a.corpID]?.name || '';
+            const cn = _corpLabel(SDE.corpsById[a.corpID], a.corpID, '');
             if (corpFilter && a.corpID !== corpFilter) continue;
             count++;
             if (a.level >= 1 && a.level <= 5) levelCounts[a.level - 1]++;
@@ -3597,7 +3604,7 @@ function openMissionHub() {
         const stns = sysRec?.stations || [];
         for (const st of stns) {
           for (const a of (SDE.agentsByLocation[st.id] || [])) {
-            const cn = SDE.corpsById[a.corpID]?.name || '';
+            const cn = _corpLabel(SDE.corpsById[a.corpID], a.corpID, '');
             if (cn) corpCounts[cn] = (corpCounts[cn] || 0) + 1;
           }
         }
@@ -3629,14 +3636,14 @@ function openMissionHub() {
         if (corpFilter) filteredAgents = filteredAgents.filter(a => a.corpID === corpFilter);
         if (filteredAgents.length === 0) continue;
         const stnName = getStationName(st.id, st.typeID);
-        const stnCorp = SDE?.corpsById[st.ownerID]?.name || '';
+        const stnCorp = _corpLabel(SDE?.corpsById[st.ownerID], st.ownerID, '');
         html += `<div style="margin:4px 0"><span style="font-size:11px;font-weight:600;color:var(--text-bright)">${stnName}</span>`;
         if (stnCorp) html += ` <span style="font-size:10px;color:var(--text-dim)">(${stnCorp})</span>`;
         html += ` <span style="font-size:10px;color:var(--accent)">${filteredAgents.length} agents</span></div>`;
         // Group agents by corp
         const agentsByCorp = {};
         for (const a of filteredAgents) {
-          const cn = SDE.corpsById[a.corpID]?.name || `Corp ${a.corpID}`;
+          const cn = _corpLabel(SDE.corpsById[a.corpID], a.corpID);
           if (!agentsByCorp[cn]) agentsByCorp[cn] = [];
           agentsByCorp[cn].push(a);
         }
@@ -4125,7 +4132,7 @@ function _initLPFilters() {
       return an.localeCompare(bn);
     });
     for (const cid of corps) {
-      const nm = lpOffersCorpNames?.[String(cid)] || SDE.corpsById[cid]?.name || `Corp ${cid}`;
+      const nm = _corpLabel(SDE.corpsById[cid], cid, lpOffersCorpNames?.[String(cid)] || `Corp ${cid}`);
       corpSel.innerHTML += `<option value="${cid}">${nm}</option>`;
     }
     doLPFSearch();
@@ -4208,7 +4215,7 @@ function doLPFSearch() {
         const corp = SDE.corpsById[corpId];
         if (!corp || String(corp.factionID) !== filterFaction) continue;
       }
-      const corpName = lpOffersCorpNames?.[String(corpId)] || SDE.corpsById[corpId]?.name || `Corp ${corpId}`;
+      const corpName = _corpLabel(SDE.corpsById[corpId], corpId, lpOffersCorpNames?.[String(corpId)] || `Corp ${corpId}`);
       rows.push({
         tid: +tid, typeName, corpId, corpName,
         lpCost: offer.lpCost || 0,
@@ -4245,7 +4252,7 @@ function doLPFSearch() {
   el.innerHTML = html;
 
   document.getElementById('lpf-status').textContent = '';
-  const filterStr = filterCorp ? t('lpfFiltered', {name: lpOffersCorpNames?.[filterCorp] || 'Corp '+filterCorp}) : filterFaction ? t('lpfFiltered', {name: SDE.factionsById[+filterFaction]?.name?.en || 'Faction'}) : '';
+  const filterStr = filterCorp ? t('lpfFiltered', {name: _corpLabel(SDE.corpsById[filterCorp], filterCorp, lpOffersCorpNames?.[filterCorp] || 'Corp '+filterCorp)}) : filterFaction ? t('lpfFiltered', {name: SDE.factionsById[+filterFaction]?.name?.en || 'Faction'}) : '';
   const truncNote = matchedTids.length > limit ? t('lpfShowingFirst', {n: limit}) : '';
   document.getElementById('lpf-summary').textContent = t('lpfOffersAcross', {offers: rows.length, items: matchedTids.length}) + filterStr + truncNote;
 
