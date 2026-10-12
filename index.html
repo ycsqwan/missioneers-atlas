@@ -311,6 +311,11 @@ select{cursor:pointer}
 .mh-row{cursor:pointer}
 .mh-row:hover{background:rgba(184,134,11,.08) !important}
 .mh-detail-row td{border-bottom:1px solid var(--border)}
+/* Mission Hub summary cells: entries are atomic tags, wrap instead of truncate */
+.mh-tag{display:inline-block;white-space:nowrap;margin:1px 8px 1px 0}
+.mh-tag .mh-cnt{color:var(--text-dim)}
+.mh-geo{word-break:break-word}
+.mh-sum{font-size:10px;line-height:1.7;vertical-align:top}
 
 /* ═══ Modal Dialog ═══ */
 .modal-overlay{
@@ -326,6 +331,7 @@ select{cursor:pointer}
   max-width:95vw;max-height:90vh;
 }
 .modal-dialog.wide{width:1100px;height:700px}
+.modal-dialog.xwide{width:min(1460px,96vw);height:800px}
 .modal-dialog.medium{width:800px;height:600px}
 .modal-dialog.narrow{width:600px;height:500px}
 .modal-header{
@@ -1037,6 +1043,11 @@ function _corpLabel(corp, cid, fallback) {
   if (corp && corp.name) return corp.nameZh ? `${corp.name} (${corp.nameZh})` : corp.name;
   if (fallback !== undefined) return fallback;
   return cid ? `Corp ${cid}` : '';
+}
+
+// Wrap a summary entry as an atomic (non-breaking) inline tag.
+function _mhTag(name, cnt) {
+  return `<span class="mh-tag">${name}${cnt !== undefined ? '<span class="mh-cnt">(' + cnt + ')</span>' : ''}</span>`;
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -3419,7 +3430,7 @@ function openMissionHub() {
   window._mhSortLevel = null;
   if (!SDE || !missionHubs) { setStatus(t('sdeNotLoaded'), 'yellow'); return; }
 
-  const m = openModal('Mission Hub Discovery', 'wide');
+  const m = openModal('Mission Hub Discovery', 'xwide');
 
   // Build region→constellation cascade from mission hubs
   const mhRcMap = _buildRegionConstMap('hubs');
@@ -3565,7 +3576,7 @@ function openMissionHub() {
       // Compute divisions, factions, corps detail from SDE if not pre-computed
       let divs, facs, corpsDetail;
       if (h._divs) {
-        divs = [...h._divs].sort().join(', ');
+        divs = [...h._divs].sort().map(n => _mhTag(n)).join('');
       } else {
         const divSet = new Set();
         const stns = sysRec?.stations || [];
@@ -3575,10 +3586,10 @@ function openMissionHub() {
             if (dn) divSet.add(dn);
           }
         }
-        divs = [...divSet].sort().join(', ');
+        divs = [...divSet].sort().map(n => _mhTag(n)).join('');
       }
       if (h._facs) {
-        facs = [...h._facs].sort().join(', ');
+        facs = [...h._facs].sort().map(n => _mhTag(n)).join('');
       } else {
         const facSet = new Set();
         const stns = sysRec?.stations || [];
@@ -3591,14 +3602,10 @@ function openMissionHub() {
             }
           }
         }
-        facs = [...facSet].sort().join(', ');
+        facs = [...facSet].sort().map(n => _mhTag(n)).join('');
       }
       if (h._corpCounts) {
-        const parts = Object.entries(h._corpCounts).sort((a,b)=>b[1]-a[1]).slice(0,4).map(([cn,cnt]) => {
-          const short = cn.length > 20 ? cn.slice(0,17) + '...' : cn;
-          return `${short}(${cnt})`;
-        });
-        corpsDetail = parts.join('  ');
+        corpsDetail = Object.entries(h._corpCounts).sort((a,b)=>b[1]-a[1]).slice(0,4).map(([cn,cnt]) => _mhTag(cn, cnt)).join('');
       } else {
         const corpCounts = {};
         const stns = sysRec?.stations || [];
@@ -3608,19 +3615,15 @@ function openMissionHub() {
             if (cn) corpCounts[cn] = (corpCounts[cn] || 0) + 1;
           }
         }
-        const parts = Object.entries(corpCounts).sort((a,b)=>b[1]-a[1]).slice(0,4).map(([cn,cnt]) => {
-          const short = cn.length > 20 ? cn.slice(0,17) + '...' : cn;
-          return `${short}(${cnt})`;
-        });
-        corpsDetail = parts.join('  ');
+        corpsDetail = Object.entries(corpCounts).sort((a,b)=>b[1]-a[1]).slice(0,4).map(([cn,cnt]) => _mhTag(cn, cnt)).join('');
       }
 
       html += `<tr class="mh-row" onclick="toggleHubDetail(${i})" title="${t('mhClickExpand')}">
         <td class="col-num">${i+1}</td><td><span style="color:var(--accent);cursor:pointer;text-decoration:underline dotted" onclick="event.stopPropagation();minimizeModal();jumpToSystem(${h.sysId})">${nm.en||'?'}${nm.zh?' ('+nm.zh+')':''}</span></td><td class="col-sec">${secStr}</td>
-        <td>${rname}</td><td>${cname}</td>
+        <td class="mh-geo">${rname}</td><td class="mh-geo">${cname}</td>
         <td class="col-num">${l3}</td><td class="col-num">${l4}</td><td class="col-num">${l5}</td>
         <td class="col-num">${total}</td>
-        <td style="font-size:10px">${divs}</td><td style="font-size:10px">${facs}</td><td style="font-size:10px">${corpsDetail}</td></tr>`;
+        <td class="mh-sum">${divs}</td><td class="mh-sum">${facs}</td><td class="mh-sum">${corpsDetail}</td></tr>`;
       // Expandable detail row (hidden by default)
       html += `<tr class="mh-detail-row" id="mh-detail-${i}" style="display:none"><td colspan="12" style="padding:0">`;
       html += `<div style="background:var(--bg-card);padding:8px 12px;border-left:3px solid var(--accent)">`;
