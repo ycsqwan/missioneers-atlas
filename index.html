@@ -3089,7 +3089,7 @@ function openAgentFinder() {
   if (!SDE) { setStatus(t('sdeNotLoaded'), 'yellow'); return; }
 
   const currentOrigin = document.getElementById('inp-origin').value.trim();
-  const m = openModal('Agent Finder', 'wide');
+  const m = openModal('Agent Finder', 'xwide');
 
   const factionOpts = _buildFactionOpts();
   const corpOpts = '<option value="">' + t('allCorps') + '</option>' + _buildCorpOptsForFaction('');
@@ -3189,13 +3189,14 @@ function doAgentSearch() {
         if (allowedCorpIds && !allowedCorpIds.has(a.corpID)) continue;
         if (corpFilter && a.corpID !== corpFilter) continue;
         const nm = rec.name || {};
+        const fac = SDE.factionsById[SDE.corpsById[a.corpID]?.factionID];
         results.push({
-          dist, sysName: nm.en || '?', sysId: sid, sec,
+          dist, sysName: nm.en || '?', sysNameZh: nm.zh || '', sysId: sid, sec,
           agentName: a.name, agentNameZh: a.nameZh || '',
           level: a.level,
           typeName: AGENT_TYPE_NAMES[a.agentTypeID] || `T${a.agentTypeID}`,
           divName: AGENT_DIVISION_NAMES[a.divisionID] || `D${a.divisionID}`,
-          factionName: SDE.factionsById[SDE.corpsById[a.corpID]?.factionID]?.name || '',
+          factionName: fac?.name || '', factionNameZh: fac?.nameZh || '',
           corpName: _corpLabel(SDE.corpsById[a.corpID], a.corpID),
           stnId: st.id, stnName: stnName, isLocator: a.isLocator,
         });
@@ -3224,10 +3225,10 @@ function doAgentSearch() {
     const secStr = r.sec >= 0 ? r.sec.toFixed(1) : r.sec.toFixed(2);
     html += `<tr ondblclick="minimizeModal();jumpToSystem(${r.sysId})" title="Double-click to navigate">
       <td class="col-num">${i+1}</td><td class="col-jumps">${r.dist}</td>
-      <td><span style="color:var(--accent);cursor:pointer;text-decoration:underline dotted" onclick="minimizeModal();jumpToSystem(${r.sysId})">${r.sysName}</span></td><td class="col-sec">${secStr}</td>
+      <td><span style="color:var(--accent);cursor:pointer;text-decoration:underline dotted" onclick="minimizeModal();jumpToSystem(${r.sysId})">${r.sysName}${r.sysNameZh?' ('+r.sysNameZh+')':''}</span></td><td class="col-sec">${secStr}</td>
       <td>${r.agentName}${r.isLocator?' [L]':''}</td>
       <td class="col-lvl">${r.level}</td><td>${r.typeName}</td><td>${r.divName}</td>
-      <td>${r.factionName}</td><td>${r.corpName}</td><td>${r.stnName}</td></tr>`;
+      <td>${r.factionName}${r.factionNameZh?' ('+r.factionNameZh+')':''}</td><td>${r.corpName}</td><td>${r.stnName}</td></tr>`;
   }
   html += '</tbody></table>';
   el.innerHTML = html;
@@ -3398,7 +3399,7 @@ function openNearestLP() {
       const secStr = r.sec >= 0 ? r.sec.toFixed(1) : r.sec.toFixed(2);
       html += `<tr onclick="selectLPRow(this,${i})" ondblclick="minimizeModal();jumpToSystem(${r.sysId})" data-idx="${i}">
         <td class="col-num">${i+1}</td><td class="col-jumps">${r.dist}</td>
-        <td><span style="color:var(--accent);cursor:pointer;text-decoration:underline dotted" onclick="minimizeModal();jumpToSystem(${r.sysId})">${r.sysName}</span></td><td class="col-sec">${secStr}</td>
+        <td><span style="color:var(--accent);cursor:pointer;text-decoration:underline dotted" onclick="minimizeModal();jumpToSystem(${r.sysId})">${r.sysName}${r.sysNameZh?' ('+r.sysNameZh+')':''}</span></td><td class="col-sec">${secStr}</td>
         ${showCorp ? `<td>${r.corpName}${r.corpNameZh ? ' ('+r.corpNameZh+')' : ''}</td>` : ''}
         <td>${r.stnName}</td></tr>`;
     }
